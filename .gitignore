@@ -1,0 +1,8 @@
+.env
+node_modules/
+tokens/
+*.log
+*.ldb
+*.pma
+
+.env

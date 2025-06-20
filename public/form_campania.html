@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Crear campaña WhatsApp</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+<body class="container py-5">
+
+  <h2 class="mb-4">Crear nueva campaña de WhatsApp</h2>
+
+  <form id="campaniaForm">
+    <div class="mb-3">
+      <label for="nombre" class="form-label">Nombre de la campaña</label>
+      <input type="text" class="form-control" id="nombre" required>
+    </div>
+    <div class="mb-3">
+      <label for="mensaje" class="form-label">Mensaje (usa {{nombre}}, {{rubro}})</label>
+      <textarea class="form-control" id="mensaje" rows="5" required></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="estado" class="form-label">Estado</label>
+      <select class="form-select" id="estado" required>
+        <option value="activa">Activa</option>
+        <option value="inactiva">Inactiva</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar campaña</button>
+    <div id="resultado" class="mt-3"></div>
+  </form>
+
+  <script>
+    document.getElementById('campaniaForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre').value;
+      const mensaje = document.getElementById('mensaje').value;
+      const estado = document.getElementById('estado').value;
+
+      const respuesta = await fetch('/api/campanias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, mensaje, estado })
+      });
+
+      const resultado = await respuesta.json();
+      document.getElementById('resultado').innerText = resultado.message;
+      if (respuesta.ok) {
+        document.getElementById('campaniaForm').reset();
+      }
+    });
+  </script>
+</body>
+</html>
