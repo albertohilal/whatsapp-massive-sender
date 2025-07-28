@@ -1,25 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db/connection');
+const connection = require('../db/connection');
 
+// Obtener campañas existentes
+router.get('/', async (req, res) => {
+  try {
+    const [rows] = await connection.query('SELECT id, nombre FROM ll_campanias_whatsapp');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener campañas:', error);
+    res.status(500).json({ error: 'Error al obtener campañas' });
+  }
+});
+
+// Crear nueva campaña
 router.post('/', async (req, res) => {
   const { nombre, mensaje, estado } = req.body;
 
-  if (!nombre || !mensaje || !estado) {
-    return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
-  }
-
   try {
-    await pool.execute(`
-      INSERT INTO ll_campanias_whatsapp (nombre, mensaje, estado, fecha_creacion)
-      VALUES (?, ?, ?, NOW())
-    `, [nombre, mensaje, estado]);
-
-    res.json({ message: '✅ Campaña guardada correctamente.' });
-
-  } catch (err) {
-    console.error('❌ Error al guardar campaña:', err.message);
-    res.status(500).json({ message: 'Error al guardar campaña.' });
+    await connection.query(
+      'INSERT INTO ll_campanias_whatsapp (nombre, mensaje, estado, created_at) VALUES (?, ?, ?, NOW())',
+      [nombre, mensaje, estado]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error al crear campaña:', error);
+    res.status(500).json({ error: 'Error al crear campaña' });
   }
 });
 
