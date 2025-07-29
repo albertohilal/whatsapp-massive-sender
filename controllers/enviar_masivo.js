@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const mysql = require('mysql2/promise');
+const qrcode = require('qrcode-terminal'); // Agregado
 
 const dbConfig = {
   host: process.env.DB_HOST,
@@ -10,14 +11,13 @@ const dbConfig = {
   port: process.env.DB_PORT
 };
 
-// Inicializa cliente de WhatsApp con autenticación local
 const client = new Client({
   authStrategy: new LocalAuth()
 });
 
 client.on('qr', (qr) => {
   console.log('🔑 Escaneá este QR para conectar WhatsApp:');
-  console.log(qr);
+  qrcode.generate(qr, { small: true }); // Genera QR visual
 });
 
 client.on('ready', async () => {
@@ -26,7 +26,6 @@ client.on('ready', async () => {
   const connection = await mysql.createConnection(dbConfig);
 
   try {
-    // 1. Buscar mensajes pendientes
     const [pendientes] = await connection.execute(`
       SELECT * FROM ll_envios_whatsapp
       WHERE estado = 'pendiente'
@@ -40,13 +39,11 @@ client.on('ready', async () => {
 
     for (const envio of pendientes) {
       const numero = envio.telefono;
+      const chatId = numero.includes('@c.us') ? numero : `${numero}@c.us`;
 
       try {
-        // 2. Enviar mensaje
-        const chatId = numero.includes('@c.us') ? numero : `${numero}@c.us`;
         await client.sendMessage(chatId, envio.mensaje_final);
 
-        // 3. Marcar como enviado
         await connection.execute(`
           UPDATE ll_envios_whatsapp
           SET estado = 'enviado', fecha_envio = NOW()

@@ -10,13 +10,13 @@ router.get('/', async (req, res) => {
       SELECT 
         l.place_id, 
         l.nombre, 
-        l.telefono, 
+        l.telefono_wapp AS telefono, 
         l.direccion,
         r.nombre AS rubro
       FROM ll_lugares l
       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-      WHERE l.telefono IS NOT NULL AND l.telefono != ''
-      ORDER BY l.nombre LIMIT 100
+      WHERE l.telefono_wapp IS NOT NULL AND l.telefono_wapp != ''
+      ORDER BY l.nombre
     `);
     conn.release();
     res.json(rows);
