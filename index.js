@@ -11,6 +11,9 @@ app.use(express.static('public'));
 
 // Rutas
 app.use('/api/campanias', require('./routes/campanias'));
+app.use('/api/generar-envios', require('./routes/generar_envios'));
+app.use('/api/lugares', require('./routes/lugares'));
+
 
 // Servidor
 const PORT = process.env.PORT || 3011;
