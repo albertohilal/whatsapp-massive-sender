@@ -1,12 +1,16 @@
+
 # 📦 whatsapp-massive-sender
 
 Sistema de envío masivo de mensajes de WhatsApp basado en `whatsapp-web.js` y `MySQL`.
 
 ## 🚀 Funcionalidades
-- Crear campañas desde formulario web
-- Generar mensajes personalizados (`{{nombre}}`, `{{rubro}}`)
-- Enviar mensajes masivos desde tabla `ll_envios_whatsapp`
-- Registrar estado (`pendiente`, `enviado`, `error`)
+
+- Crear campañas desde un formulario web tipo CRUD.
+- Visualizar, editar y eliminar campañas existentes.
+- Generar mensajes personalizados usando variables (`{{nombre}}`, `{{rubro}}`).
+- Enviar mensajes masivos desde la tabla `ll_envios_whatsapp`.
+- Registro automático del estado del envío (`pendiente`, `enviado`, `error`).
+- Configuración multientorno (`.env`), con puertos diferenciados para desarrollo local y producción.
 
 ## 📦 Requisitos
 
@@ -21,44 +25,54 @@ Sistema de envío masivo de mensajes de WhatsApp basado en `whatsapp-web.js` y `
 git clone https://github.com/tuusuario/whatsapp-massive-sender.git
 cd whatsapp-massive-sender
 npm install
-Configurar .env:
+```
 
-ini
-Copiar
-Editar
+### Configurar `.env`:
+
+```env
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=tu_clave
 DB_DATABASE=iunaorg_dyd
 DB_PORT=3306
-PORT=3000
-🧪 Uso
-Iniciar servidor web:
+PORT=3010
+```
 
-bash
-Copiar
-Editar
+## 🧪 Uso
+
+### Iniciar servidor web:
+
+```bash
 node index.js
-Abrir navegador: http://localhost:3000/form_campania.html
+```
 
-Crear campaña
+Abrir navegador en:
 
-Generar envíos con:
+```
+http://localhost:3010/form_campania.html
+```
 
-bash
-Copiar
-Editar
+Desde allí podrás:
+
+- Crear una nueva campaña.
+- Editar campañas existentes.
+- Visualizar mensajes de cada campaña.
+
+### Generar envíos automáticos:
+
+```bash
 node campaigns/generar_envios.js
-Enviar mensajes pendientes:
+```
 
-bash
-Copiar
-Editar
+### Enviar mensajes pendientes:
+
+```bash
 node controllers/enviar_masivo.js
-🛠 Tablas necesarias en MySQL
-sql
-Copiar
-Editar
+```
+
+## 🛠 Tablas necesarias en MySQL
+
+```sql
 CREATE TABLE ll_campanias_whatsapp (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100),
@@ -88,5 +102,12 @@ CREATE TABLE ll_rubros (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100)
 );
-📎 Licencia
+```
+
+## 📝 Estado `pendiente`
+
+Cuando se crea una campaña, los envíos asociados se cargan en la tabla `ll_envios_whatsapp` con estado `pendiente`. Esto indica que el mensaje aún no fue enviado. Al ejecutar `enviar_masivo.js`, estos registros se procesan y actualizan a `enviado` o `error`.
+
+## 📎 Licencia
+
 MIT

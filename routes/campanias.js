@@ -5,7 +5,7 @@ const connection = require('../db/connection');
 // Obtener campañas existentes
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await connection.query('SELECT id, nombre FROM ll_campanias_whatsapp');
+    const [rows] = await connection.query('SELECT id, nombre, mensaje, estado FROM ll_campanias_whatsapp');
     res.json(rows);
   } catch (error) {
     console.error('Error al obtener campañas:', error);
