@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
       SELECT 
         l.place_id, 
         l.nombre, 
-        l.telefono_wapp AS telefono, 
+        l.telefono_wapp, 
         l.direccion,
         r.nombre AS rubro
       FROM ll_lugares l

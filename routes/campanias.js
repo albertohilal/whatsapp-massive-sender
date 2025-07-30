@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db/connection');
+const connection = require('../db/connection'); // Asegurate que este archivo existe
 
 // Obtener todas las campañas
 router.get('/', async (req, res) => {
@@ -18,17 +18,14 @@ router.get('/', async (req, res) => {
 // Obtener campaña por ID
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-
   try {
     const [rows] = await connection.query(
       'SELECT id, nombre, mensaje, estado FROM ll_campanias_whatsapp WHERE id = ?',
       [id]
     );
-
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Campaña no encontrada' });
     }
-
     res.json(rows[0]);
   } catch (error) {
     console.error('Error al obtener campaña por ID:', error);
@@ -40,9 +37,13 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const { nombre, mensaje, estado } = req.body;
 
+  if (!nombre || !mensaje || !estado) {
+    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  }
+
   try {
     await connection.query(
-      'INSERT INTO ll_campanias_whatsapp (nombre, mensaje, estado, created_at) VALUES (?, ?, ?, NOW())',
+      'INSERT INTO ll_campanias_whatsapp (nombre, mensaje, estado, fecha_creacion) VALUES (?, ?, ?, NOW())',
       [nombre, mensaje, estado]
     );
     res.json({ success: true });
@@ -52,7 +53,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar campaña existente
+// Actualizar campaña
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, mensaje, estado } = req.body;

@@ -3,142 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Generar Envíos de WhatsApp</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
-    th {
-      background: #eee;
-    }
-    select, input {
-      margin-right: 1rem;
-      padding: 0.4rem;
-    }
-  </style>
+  <title>Enviar Campaña de WhatsApp</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
 </head>
-<body>
+<body class="p-4">
+  <div class="container">
+    <h2>Enviar Campaña de WhatsApp</h2>
 
-  <h2>Enviar Campaña de WhatsApp</h2>
+    <div class="mb-3">
+      <label class="form-label">Seleccionar Campaña</label>
+      <select id="select-campania" class="form-select"></select>
+    </div>
 
-  <div>
-    <label for="campania">Seleccionar Campaña</label>
-    <select id="campania"></select>
+    <div class="mb-3 d-flex gap-3">
+      <div>
+        <label class="form-label">Filtrar por Rubro:</label>
+        <input type="text" id="filtroRubro" class="form-control" placeholder="restaurante, bar, etc."/>
+      </div>
+      <div>
+        <label class="form-label">Filtrar por Dirección</label>
+        <input type="text" id="filtroDireccion" class="form-control" placeholder="lanus, banfield..."/>
+      </div>
+    </div>
+
+    <div id="tabla-lugares" class="mt-4"></div>
+
+    <button class="btn btn-primary mt-3" onclick="enviar()">Generar Envíos</button>
   </div>
-
-  <div style="margin-top: 1rem;">
-    <label for="filtroRubro">Filtrar por Rubro:</label>
-    <select id="filtroRubro">
-      <option value="">Todos</option>
-    </select>
-
-    <label for="filtroDireccion">Dirección contiene:</label>
-    <input type="text" id="filtroDireccion" placeholder="Ej: Lomas, Lanús..." />
-  </div>
-
-  <h3>Lugares disponibles</h3>
-  <table>
-    <thead>
-      <tr>
-        <th><input type="checkbox" id="selectAll" /></th>
-        <th>Nombre</th>
-        <th>Teléfono</th>
-        <th>Rubro</th>
-        <th>Dirección</th>
-      </tr>
-    </thead>
-    <tbody id="tablaLugares"></tbody>
-  </table>
-
-  <button onclick="generarEnvios()">Generar Envíos</button>
 
   <script>
     let lugares = [];
 
-    async function cargarCampanias() {
-      const res = await fetch('/api/campanias');
-      const data = await res.json();
-      const select = document.getElementById('campania');
-      data.forEach(c => {
-        const option = document.createElement('option');
-        option.value = c.id;
-        option.textContent = `${c.id} - ${c.nombre}`;
-        select.appendChild(option);
-      });
-    }
-
     async function cargarLugares() {
       const res = await fetch('/api/lugares');
       lugares = await res.json();
-      cargarRubrosUnicos();
       renderizarLugares();
     }
 
-    function cargarRubrosUnicos() {
-      const filtroRubro = document.getElementById('filtroRubro');
-      const rubrosUnicos = [...new Set(lugares.map(l => l.rubro).filter(Boolean))];
-      rubrosUnicos.forEach(r => {
-        const option = document.createElement('option');
-        option.value = r;
-        option.textContent = r;
-        filtroRubro.appendChild(option);
-      });
-    }
-
     function renderizarLugares() {
-      const tbody = document.getElementById('tablaLugares');
-      tbody.innerHTML = '';
-
       const rubroFiltro = document.getElementById('filtroRubro').value.toLowerCase();
       const direccionFiltro = document.getElementById('filtroDireccion').value.toLowerCase();
 
       const filtrados = lugares.filter(l => {
-        const coincideRubro = rubroFiltro ? l.rubro?.toLowerCase() === rubroFiltro : true;
-        const coincideDireccion = direccionFiltro ? l.direccion?.toLowerCase().includes(direccionFiltro) : true;
+        const coincideRubro = l.rubro?.toLowerCase().includes(rubroFiltro);
+        const coincideDireccion = l.direccion?.toLowerCase().includes(direccionFiltro);
         return coincideRubro && coincideDireccion;
       });
 
-      filtrados.forEach(l => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><input type="checkbox" data-place-id="${l.place_id}"></td>
-          <td>${l.nombre}</td>
-          <td>${l.telefono}</td>
-          <td>${l.rubro || ''}</td>
-          <td>${l.direccion || ''}</td>
-        `;
-        tbody.appendChild(row);
-      });
+      const tablaHTML = `
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th></th><th>Nombre</th><th>WhatsApp</th><th>Rubro</th><th>Dirección</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtrados.map(l => `
+              <tr>
+                <td><input type="checkbox" data-place-id="${l.place_id}"></td>
+                <td>${l.nombre}</td>
+                <td>${l.telefono_wapp || ''}</td>
+                <td>${l.rubro}</td>
+                <td>${l.direccion}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById('tabla-lugares').innerHTML = tablaHTML;
     }
 
-    function generarEnvios() {
-      const seleccionados = [...document.querySelectorAll('tbody input[type="checkbox"]:checked')].map(cb => cb.dataset.placeId);
-      const campaña = document.getElementById('campania').value;
-      alert(`Enviar campaña ${campaña} a:\n\n${seleccionados.join('\n')}`);
-      // Aquí deberías enviar los datos al backend si lo deseás
+    async function cargarCampanias() {
+      const res = await fetch('/api/campanias');
+      const campanias = await res.json();
+      const select = document.getElementById('select-campania');
+      select.innerHTML = campanias.map(c => `<option value="${c.id}">${c.id} - ${c.nombre}</option>`).join('');
     }
 
-    document.getElementById('filtroRubro').addEventListener('change', renderizarLugares);
+    async function enviar() {
+      const campania_id = parseInt(document.getElementById('select-campania').value);
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+      const place_ids = Array.from(checkboxes).map(cb => cb.getAttribute('data-place-id'));
+
+      if (!campania_id || place_ids.length === 0) {
+        alert('Debe seleccionar una campaña y al menos un lugar.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/generar-envios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campania_id, place_ids })  // <--- CORREGIDO
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Error al generar envíos');
+        }
+
+        alert('Envíos generados correctamente');
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Error: ' + err.message);
+      }
+    }
+
+    document.getElementById('filtroRubro').addEventListener('input', renderizarLugares);
     document.getElementById('filtroDireccion').addEventListener('input', renderizarLugares);
-    document.getElementById('selectAll').addEventListener('change', function() {
-      const checked = this.checked;
-      document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb => cb.checked = checked);
-    });
 
-    cargarCampanias();
     cargarLugares();
+    cargarCampanias();
   </script>
-
 </body>
 </html>
