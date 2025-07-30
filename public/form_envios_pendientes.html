@@ -76,6 +76,9 @@
         return;
       }
 
+      const confirmar = confirm(`¿Seguro que querés enviar ${seleccionados.length} mensajes ahora?`);
+      if (!confirmar) return;
+
       const res = await fetch('/api/enviar-masivo-manual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

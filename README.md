@@ -1,113 +1,104 @@
+# WhatsApp Massive Sender
 
-# 📦 whatsapp-massive-sender
+Este proyecto permite enviar mensajes de WhatsApp de manera automatizada desde el navegador, utilizando Puppeteer y una base de datos MySQL para gestionar campañas, contactos y envíos.
 
-Sistema de envío masivo de mensajes de WhatsApp basado en `whatsapp-web.js` y `MySQL`.
+## 🧱 Estructura del Proyecto
 
-## 🚀 Funcionalidades
+### 📁 `/bot/`
+Contiene la lógica del bot de WhatsApp que se conecta con WhatsApp Web mediante Puppeteer y permite enviar mensajes automáticamente.
 
-- Crear campañas desde un formulario web tipo CRUD.
-- Visualizar, editar y eliminar campañas existentes.
-- Generar mensajes personalizados usando variables (`{{nombre}}`, `{{rubro}}`).
-- Enviar mensajes masivos desde la tabla `ll_envios_whatsapp`.
-- Registro automático del estado del envío (`pendiente`, `enviado`, `error`).
-- Configuración multientorno (`.env`), con puertos diferenciados para desarrollo local y producción.
+### 📁 `/campaigns/`
+Contiene formularios y vistas web relacionadas con la creación de campañas y el control de los envíos.
 
-## 📦 Requisitos
+- `form_campania.html`: Formulario para crear una nueva campaña.
+- `form_envios.html`: Vista para generar envíos en lote desde una campaña existente.
+- `form_envios_pendientes.html`: Vista para revisar los mensajes pendientes y enviarlos de manera manual y selectiva.
 
-- Node.js 18+
-- MySQL 5.7+
-- Google Chrome o Chromium instalado (para escanear el QR)
-- WhatsApp activo con número argentino (`54911xxxx`)
+### 📁 `/controllers/`
+Contiene la lógica de negocio para controlar las operaciones de campaña y envíos.
 
-## ⚙️ Instalación
+- `enviar_masivo.js`: Controlador principal para generar y enviar mensajes en lote desde campañas, utilizando Puppeteer.
 
-```bash
-git clone https://github.com/tuusuario/whatsapp-massive-sender.git
-cd whatsapp-massive-sender
-npm install
-```
+### 📁 `/db/`
+Manejo de conexión a la base de datos MySQL.
 
-### Configurar `.env`:
+- `connection.js`: Establece y exporta la conexión a MySQL para todo el sistema.
 
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=tu_clave
-DB_DATABASE=iunaorg_dyd
-DB_PORT=3306
-PORT=3010
-```
+### 📁 `/public/`
+Archivos públicos accesibles desde el navegador (HTML, imágenes, JS del frontend).
 
-## 🧪 Uso
+### 📁 `/routes/`
+Define las rutas del backend (API) para trabajar con campañas, lugares y envíos. A continuación se detalla el propósito de cada archivo:
 
-### Iniciar servidor web:
+#### `routes/campanias.js`
 
-```bash
-node index.js
-```
+- `GET /api/campanias`  
+  Devuelve todas las campañas registradas.
 
-Abrir navegador en:
+- `POST /api/campanias`  
+  Crea una nueva campaña en la base de datos.
 
-```
-http://localhost:3010/form_campania.html
-```
+- `PUT /api/campanias/:id`  
+  Actualiza el nombre o contenido de una campaña existente.
 
-Desde allí podrás:
+- `DELETE /api/campanias/:id`  
+  Elimina una campaña y sus envíos relacionados.
 
-- Crear una nueva campaña.
-- Editar campañas existentes.
-- Visualizar mensajes de cada campaña.
+#### `routes/lugares.js`
 
-### Generar envíos automáticos:
+- `GET /api/lugares`  
+  Devuelve todos los lugares (destinatarios) almacenados. Se utiliza como fuente para las campañas.
 
-```bash
-node campaigns/generar_envios.js
-```
+#### `routes/generar_envios.js`
 
-### Enviar mensajes pendientes:
+- `POST /api/generar-envios`  
+  A partir de una campaña y un conjunto de lugares, genera mensajes personalizados y los guarda con estado `pendiente` en la tabla `ll_envios_whatsapp`.
 
-```bash
-node controllers/enviar_masivo.js
-```
+- `GET /api/pendientes/:campania_id`  
+  Devuelve todos los mensajes pendientes (estado `pendiente`) de una campaña específica.
 
-## 🛠 Tablas necesarias en MySQL
+- `POST /api/enviar-masivo-manual`  
+  Permite enviar mensajes manualmente seleccionados desde el formulario de pendientes.
 
-```sql
-CREATE TABLE ll_campanias_whatsapp (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100),
-  mensaje TEXT,
-  estado VARCHAR(20),
-  fecha_creacion DATETIME
-);
+---
 
-CREATE TABLE ll_envios_whatsapp (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  campania_id INT,
-  telefono VARCHAR(20),
-  nombre_destino VARCHAR(100),
-  mensaje_final TEXT,
-  estado VARCHAR(20),
-  fecha_envio DATETIME
-);
+## 🔌 Base de Datos
 
-CREATE TABLE ll_lugares (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100),
-  telefono VARCHAR(20),
-  rubro_id INT
-);
+Las tablas clave utilizadas en el sistema son:
 
-CREATE TABLE ll_rubros (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100)
-);
-```
+- `ll_campanias_whatsapp`  
+  Contiene las campañas con `id`, `nombre`, `mensaje_base`.
 
-## 📝 Estado `pendiente`
+- `ll_envios_whatsapp`  
+  Cada registro representa un mensaje a enviar. Tiene `telefono_wapp`, `mensaje_final`, `estado` y `fecha_envio`.
 
-Cuando se crea una campaña, los envíos asociados se cargan en la tabla `ll_envios_whatsapp` con estado `pendiente`. Esto indica que el mensaje aún no fue enviado. Al ejecutar `enviar_masivo.js`, estos registros se procesan y actualizan a `enviado` o `error`.
+- `ll_lugares`  
+  Destinatarios de las campañas. Contiene nombres y teléfonos de contacto.
 
-## 📎 Licencia
+---
 
-MIT
+## ▶️ Ejecución del Proyecto
+
+1. Instalar dependencias:
+   ```bash
+   npm install
+   ```
+
+2. Configurar archivo `.env` con los datos de conexión a la base de datos.
+
+3. Iniciar el servidor:
+   ```bash
+   node index.js
+   ```
+
+4. Acceder desde el navegador a:
+   - `http://localhost:3010/form_campania.html`
+   - `http://localhost:3010/form_envios.html`
+   - `http://localhost:3010/form_envios_pendientes.html`
+
+---
+
+## ⚠️ Notas
+
+- La autenticación con WhatsApp se realiza escaneando un QR al iniciar el bot.
+- Los datos generados en `.wwebjs_auth/` y `.wwebjs_cache/` no deben subirse a GitHub.
