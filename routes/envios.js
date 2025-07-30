@@ -3,7 +3,7 @@ const router = express.Router();
 const connection = require('../db/connection');
 
 // Obtener mensajes pendientes por campaña
-router.get('/envios', async (req, res) => {
+router.get('/', async (req, res) => {
   const campaniaId = req.query.campania_id;
 
   try {

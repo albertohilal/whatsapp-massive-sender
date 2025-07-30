@@ -1,22 +1,33 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
-
 const app = express();
+const cors = require('cors');
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rutas
-app.use('/api/campanias', require('./routes/campanias'));
-app.use('/api/generar-envios', require('./routes/generar_envios'));
-app.use('/api/lugares', require('./routes/lugares'));
-app.use('/api', require('./routes/envios')); // ✅ esta es la que faltaba
+const campaniasRoutes = require('./routes/campanias');
+const enviosRoutes = require('./routes/envios');
+const generarEnviosRoutes = require('./routes/generar_envios');
+const lugaresRoutes = require('./routes/lugares');
+const pm2Routes = require('./routes/pm2'); // ✅ esta línea es clave
 
-// Servidor
-const PORT = process.env.PORT || 3011;
+app.use('/api/campanias', campaniasRoutes);
+app.use('/api/envios', enviosRoutes);
+app.use('/api/generar-envios', generarEnviosRoutes);
+app.use('/api/lugares', lugaresRoutes);
+app.use('/pm2', pm2Routes); // ✅ esto expone el endpoint `/pm2/status`
+
+// Ruta principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Puerto desde .env
+const PORT = process.env.PORT || 3010;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

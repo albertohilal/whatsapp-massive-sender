@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inicio - WhatsApp Massive Sender</title>
+  <script>
+    async function ejecutarAccion(accion) {
+      const res = await fetch(`/pm2/${accion}`, { method: 'POST' });
+      const data = await res.json();
+      alert(`Servidor ${accion}: ${data.status}`);
+      cargarEstado();
+    }
+
+    async function cargarEstado() {
+      const res = await fetch('/pm2/status');
+      const data = await res.json();
+      const contenedor = document.getElementById("estado");
+      contenedor.innerHTML = data.map(proc => `
+        <tr>
+          <td>${proc.name}</td>
+          <td>${proc.pm_id}</td>
+          <td>${proc.pm2_env.status}</td>
+          <td>${proc.pm2_env.restart_time}</td>
+          <td>${proc.pm2_env.pm_uptime ? new Date(proc.pm2_env.pm_uptime).toLocaleString() : ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    window.onload = cargarEstado;
+  </script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    button, a { margin: 5px; padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; text-decoration: none; }
+    button:hover, a:hover { background-color: #0056b3; }
+    table { margin-top: 20px; width: 100%; border-collapse: collapse; }
+    td, th { padding: 8px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>WhatsApp Massive Sender</h1>
+
+  <div>
+    <button onclick="ejecutarAccion('start')">Iniciar servidor</button>
+    <button onclick="ejecutarAccion('stop')">Detener servidor</button>
+    <button onclick="ejecutarAccion('restart')">Reiniciar servidor</button>
+  </div>
+
+  <div>
+    <a href="/form_campania.html">Enviar campaña</a>
+    <a href="/form_envios_pendientes.html">Enviar pendientes</a>
+    <a href="/form_envios.html">Formulario masivo</a>
+    <a href="/test.html">Test conexión</a>
+  </div>
+
+  <h2>Estado del proceso (PM2)</h2>
+  <table>
+    <thead>
+      <tr><th>Nombre</th><th>ID</th><th>Estado</th><th>Reinicios</th><th>Inicio</th></tr>
+    </thead>
+    <tbody id="estado"></tbody>
+  </table>
+</body>
+</html>
