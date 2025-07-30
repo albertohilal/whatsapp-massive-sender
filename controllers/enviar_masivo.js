@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const mysql = require('mysql2/promise');
-const qrcode = require('qrcode-terminal'); // Agregado
+const qrcode = require('qrcode-terminal');
 
 const dbConfig = {
   host: process.env.DB_HOST,
@@ -12,12 +12,16 @@ const dbConfig = {
 };
 
 const client = new Client({
-  authStrategy: new LocalAuth()
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    headless: false, // ← MODO VISUAL (NO headless)
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  }
 });
 
 client.on('qr', (qr) => {
   console.log('🔑 Escaneá este QR para conectar WhatsApp:');
-  qrcode.generate(qr, { small: true }); // Genera QR visual
+  qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', async () => {
@@ -34,11 +38,13 @@ client.on('ready', async () => {
 
     if (pendientes.length === 0) {
       console.log('📭 No hay mensajes pendientes para enviar.');
+      await connection.end();
+      // No cerramos el cliente si no hay pendientes, para mantenerlo activo
       return;
     }
 
     for (const envio of pendientes) {
-      const numero = envio.telefono;
+      const numero = envio.telefono_wapp;
       const chatId = numero.includes('@c.us') ? numero : `${numero}@c.us`;
 
       try {
@@ -66,7 +72,9 @@ client.on('ready', async () => {
     console.error('❌ Error general:', err.message);
   } finally {
     await connection.end();
-    client.destroy();
+    console.log('🔌 Base de datos cerrada');
+    // NO destruimos el cliente inmediatamente, para evitar cierre prematuro del navegador
+    // client.destroy();
   }
 });
 

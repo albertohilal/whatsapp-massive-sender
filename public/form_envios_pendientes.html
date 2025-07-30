@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enviar pendientes por WhatsApp</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+</head>
+<body class="p-4">
+  <div class="container">
+    <h2>Mensajes pendientes de envío</h2>
+
+    <div class="mb-3">
+      <label class="form-label">Seleccionar campaña</label>
+      <select id="select-campania" class="form-select"></select>
+    </div>
+
+    <div id="tabla-pendientes"></div>
+
+    <button class="btn btn-primary mt-3" onclick="enviarSeleccionados()">Enviar seleccionados</button>
+  </div>
+
+  <script>
+    let pendientes = [];
+
+    async function cargarCampanias() {
+      const res = await fetch('/api/campanias');
+      const campanias = await res.json();
+      const select = document.getElementById('select-campania');
+      select.innerHTML = campanias.map(c => `<option value="${c.id}">${c.id} - ${c.nombre}</option>`).join('');
+      select.addEventListener('change', cargarPendientes);
+      cargarPendientes();
+    }
+
+    async function cargarPendientes() {
+      const campania_id = document.getElementById('select-campania').value;
+      const res = await fetch(`/api/envios?campania_id=${campania_id}`);
+      pendientes = await res.json();
+      renderizarPendientes();
+    }
+
+    function renderizarPendientes() {
+      if (pendientes.length === 0) {
+        document.getElementById('tabla-pendientes').innerHTML = '<p>No hay mensajes pendientes.</p>';
+        return;
+      }
+
+      const tabla = `
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th></th><th>Teléfono</th><th>Mensaje</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pendientes.map(p => `
+              <tr>
+                <td><input type="checkbox" data-id="${p.id}" checked></td>
+                <td>${p.telefono_wapp}</td>
+                <td>${p.mensaje_final}</td>
+                <td>${p.estado}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('tabla-pendientes').innerHTML = tabla;
+    }
+
+    async function enviarSeleccionados() {
+      const seleccionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(cb => parseInt(cb.getAttribute('data-id')));
+
+      if (seleccionados.length === 0) {
+        alert('Seleccioná al menos un mensaje.');
+        return;
+      }
+
+      const res = await fetch('/api/enviar-masivo-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: seleccionados })
+      });
+
+      const data = await res.json();
+      alert(`Se enviaron ${data.enviados} mensajes.`);
+      cargarPendientes();
+    }
+
+    cargarCampanias();
+  </script>
+</body>
+</html>
