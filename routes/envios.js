@@ -6,9 +6,15 @@ const connection = require('../db/connection');
 router.get('/', async (req, res) => {
   const campaniaId = req.query.campania_id;
 
+  if (!campaniaId) {
+    return res.status(400).json({ error: 'Falta campania_id' });
+  }
+
   try {
     const [rows] = await connection.query(
-      'SELECT id, telefono_wapp, nombre_destino, mensaje_final, estado FROM ll_envios_whatsapp WHERE campania_id = ? AND estado = "pendiente"',
+      `SELECT id, telefono_wapp, nombre_destino, mensaje_final, estado 
+       FROM ll_envios_whatsapp 
+       WHERE campania_id = ? AND estado = 'pendiente'`,
       [campaniaId]
     );
     res.json(rows);
@@ -18,29 +24,32 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Envío manual desde formulario
+// Envío manual desde formulario (corrige formato del frontend)
 router.post('/enviar-masivo-manual', async (req, res) => {
-  const { ids } = req.body;
+  const mensajes = req.body.mensajes;
   let enviados = 0;
 
+  if (!Array.isArray(mensajes)) {
+    return res.status(400).json({ error: 'mensajes debe ser un array' });
+  }
+
   try {
-    for (const id of ids) {
-      const [[registro]] = await connection.query(
-        'SELECT telefono_wapp, mensaje_final FROM ll_envios_whatsapp WHERE id = ? AND estado = "pendiente"',
-        [id]
+    for (const msg of mensajes) {
+      if (!msg.id || !msg.telefono_wapp || !msg.mensaje_final) {
+        console.warn('❌ Mensaje con formato inválido:', msg);
+        continue;
+      }
+
+      console.log(`📤 Enviando a ${msg.telefono_wapp}: ${msg.mensaje_final}`);
+
+      await connection.query(
+        `UPDATE ll_envios_whatsapp 
+         SET estado = 'enviado', fecha_envio = NOW() 
+         WHERE id = ? AND estado = 'pendiente'`,
+        [msg.id]
       );
 
-      if (registro) {
-        // Simula el envío real de WhatsApp aquí
-        console.log(`📤 Enviando a ${registro.telefono_wapp}: ${registro.mensaje_final}`);
-
-        await connection.query(
-          'UPDATE ll_envios_whatsapp SET estado = "enviado", fecha_envio = NOW() WHERE id = ?',
-          [id]
-        );
-
-        enviados++;
-      }
+      enviados++;
     }
 
     res.json({ enviados });
