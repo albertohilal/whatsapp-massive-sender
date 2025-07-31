@@ -13,13 +13,15 @@ const campaniasRoutes = require('./routes/campanias');
 const enviosRoutes = require('./routes/envios');
 const generarEnviosRoutes = require('./routes/generar_envios');
 const lugaresRoutes = require('./routes/lugares');
-const pm2Routes = require('./routes/pm2'); // ✅ esta línea es clave
+const pm2Routes = require('./routes/pm2');
+const rubrosRoutes = require('./routes/rubros');
 
 app.use('/api/campanias', campaniasRoutes);
 app.use('/api/envios', enviosRoutes);
 app.use('/api/generar-envios', generarEnviosRoutes);
 app.use('/api/lugares', lugaresRoutes);
-app.use('/pm2', pm2Routes); // ✅ esto expone el endpoint `/pm2/status`
+app.use('/api/rubros', rubrosRoutes);
+app.use('/pm2', pm2Routes);
 
 // Ruta principal
 app.get('/', (req, res) => {

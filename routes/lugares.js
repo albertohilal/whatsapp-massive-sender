@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
         l.latitud,
         l.longitud,
         l.rubro_id,
-        r.nombre AS rubro,
+        r.nombre_es AS rubro,
         l.zona_id,
         l.rating,
         l.reviews,
@@ -39,10 +39,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST: Crear un nuevo lugar
 router.post('/', async (req, res) => {
   const data = req.body;
-
   try {
     const conn = await pool.getConnection();
     const sql = `
@@ -70,7 +68,6 @@ router.post('/', async (req, res) => {
       data.abierto || ''
     ]);
     conn.release();
-
     res.status(201).json({ mensaje: 'Lugar creado con éxito', id: result.insertId });
   } catch (error) {
     console.error('Error al crear lugar:', error);
@@ -78,7 +75,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT: Actualizar un lugar
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const data = req.body;
@@ -112,7 +108,6 @@ router.put('/:id', async (req, res) => {
       id
     ]);
     conn.release();
-
     res.json({ mensaje: 'Lugar actualizado correctamente' });
   } catch (error) {
     console.error('Error al actualizar lugar:', error);
@@ -120,14 +115,12 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE: Eliminar un lugar
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const conn = await pool.getConnection();
     await conn.query('DELETE FROM ll_lugares WHERE id = ?', [id]);
     conn.release();
-
     res.json({ mensaje: 'Lugar eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar lugar:', error);

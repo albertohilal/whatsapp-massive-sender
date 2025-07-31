@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/connection');
 
-router.post('/generar-envios', async (req, res) => {
+// CORREGIDO: usar ruta base "/"
+router.post('/', async (req, res) => {
   try {
     const { campania_id, place_ids } = req.body;
 
