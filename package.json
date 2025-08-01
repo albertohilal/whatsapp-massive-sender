@@ -13,11 +13,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "formdata-node": "^6.0.3",
     "mysql2": "^3.14.1",
     "pm2": "^6.0.8",
     "puppeteer": "^24.15.0",
     "puppeteer-core": "^20.9.0",
     "qrcode-terminal": "^0.12.0",
+    "venom-bot": "^5.3.0",
     "whatsapp-web.js": "^1.22.1"
   }
 }

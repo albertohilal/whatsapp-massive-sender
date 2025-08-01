@@ -24,24 +24,42 @@
     let pendientes = [];
 
     async function cargarCampanias() {
-      const res = await fetch('/api/campanias');
-      const campanias = await res.json();
-      const select = document.getElementById('select-campania');
-      select.innerHTML = campanias.map(c => `<option value="${c.id}">${c.id} - ${c.nombre}</option>`).join('');
-      select.addEventListener('change', cargarPendientes);
-      cargarPendientes();
+      try {
+        const res = await fetch('/api/campanias');
+        const campanias = await res.json();
+        const select = document.getElementById('select-campania');
+
+        select.innerHTML = campanias.map(c => 
+          `<option value="${c.id}">${c.id} - ${c.nombre}</option>`
+        ).join('');
+
+        select.addEventListener('change', cargarPendientes);
+        cargarPendientes();
+      } catch (error) {
+        console.error('Error al cargar campañas:', error);
+        alert('Error al cargar campañas.');
+      }
     }
 
     async function cargarPendientes() {
       const campania_id = document.getElementById('select-campania').value;
-      const res = await fetch(`/api/envios?campania_id=${campania_id}`);
-      pendientes = await res.json();
-      renderizarPendientes();
+      if (!campania_id) return;
+
+      try {
+        const res = await fetch(`/api/envios?campania_id=${campania_id}`);
+        pendientes = await res.json();
+        renderizarPendientes();
+      } catch (error) {
+        console.error('Error al cargar pendientes:', error);
+        alert('Error al cargar mensajes pendientes.');
+      }
     }
 
     function renderizarPendientes() {
+      const contenedor = document.getElementById('tabla-pendientes');
+
       if (pendientes.length === 0) {
-        document.getElementById('tabla-pendientes').innerHTML = '<p>No hay mensajes pendientes.</p>';
+        contenedor.innerHTML = '<p>No hay mensajes pendientes.</p>';
         return;
       }
 
@@ -49,13 +67,14 @@
         <table class="table table-bordered">
           <thead>
             <tr>
-              <th></th><th>Teléfono</th><th>Mensaje</th><th>Estado</th>
+              <th></th><th>ID</th><th>Teléfono</th><th>Mensaje</th><th>Estado</th>
             </tr>
           </thead>
           <tbody>
             ${pendientes.map(p => `
               <tr>
                 <td><input type="checkbox" data-id="${p.id}" checked></td>
+                <td>${p.id}</td>
                 <td>${p.telefono_wapp}</td>
                 <td>${p.mensaje_final}</td>
                 <td>${p.estado}</td>
@@ -64,12 +83,13 @@
           </tbody>
         </table>
       `;
-      document.getElementById('tabla-pendientes').innerHTML = tabla;
+      contenedor.innerHTML = tabla;
     }
 
     async function enviarSeleccionados() {
       const seleccionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-        .map(cb => parseInt(cb.getAttribute('data-id')));
+        .map(cb => parseInt(cb.getAttribute('data-id')))
+        .filter(id => !isNaN(id));
 
       if (seleccionados.length === 0) {
         alert('Seleccioná al menos un mensaje.');
@@ -79,15 +99,25 @@
       const confirmar = confirm(`¿Seguro que querés enviar ${seleccionados.length} mensajes ahora?`);
       if (!confirmar) return;
 
-      const res = await fetch('/api/enviar-masivo-manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: seleccionados })
-      });
+      try {
+        const res = await fetch('/api/enviar-manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: seleccionados })
+        });
 
-      const data = await res.json();
-      alert(`Se enviaron ${data.enviados} mensajes.`);
-      cargarPendientes();
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(data.mensaje);
+          cargarPendientes();
+        } else {
+          alert(data.error || 'Error al enviar mensajes.');
+        }
+      } catch (error) {
+        console.error('Error al enviar mensajes:', error);
+        alert('No se pudo conectar con el servidor.');
+      }
     }
 
     cargarCampanias();
