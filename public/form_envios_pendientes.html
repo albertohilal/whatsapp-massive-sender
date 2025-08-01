@@ -22,6 +22,7 @@
 
   <script>
     let pendientes = [];
+    let campaniaActual = null;
 
     async function cargarCampanias() {
       try {
@@ -34,7 +35,8 @@
         ).join('');
 
         select.addEventListener('change', cargarPendientes);
-        cargarPendientes();
+        campaniaActual = select.value;
+        cargarPendientes(); // carga inicial
       } catch (error) {
         console.error('Error al cargar campañas:', error);
         alert('Error al cargar campañas.');
@@ -44,6 +46,8 @@
     async function cargarPendientes() {
       const campania_id = document.getElementById('select-campania').value;
       if (!campania_id) return;
+
+      campaniaActual = campania_id;
 
       try {
         const res = await fetch(`/api/envios?campania_id=${campania_id}`);
@@ -73,7 +77,7 @@
           <tbody>
             ${pendientes.map(p => `
               <tr>
-                <td><input type="checkbox" data-id="${p.id}" checked></td>
+                <td><input type="checkbox" name="seleccionados[]" value="${p.id}" checked></td>
                 <td>${p.id}</td>
                 <td>${p.telefono_wapp}</td>
                 <td>${p.mensaje_final}</td>
@@ -87,8 +91,8 @@
     }
 
     async function enviarSeleccionados() {
-      const seleccionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-        .map(cb => parseInt(cb.getAttribute('data-id')))
+      const seleccionados = Array.from(document.querySelectorAll('input[name="seleccionados[]"]:checked'))
+        .map(cb => parseInt(cb.value))
         .filter(id => !isNaN(id));
 
       if (seleccionados.length === 0) {
@@ -103,14 +107,14 @@
         const res = await fetch('/api/enviar-manual', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: seleccionados })
+          body: JSON.stringify({ seleccionados })
         });
 
         const data = await res.json();
 
         if (res.ok) {
-          alert(data.mensaje);
-          cargarPendientes();
+          alert(data.mensaje || "Mensajes enviados correctamente.");
+          cargarPendientes(); // recargar tabla
         } else {
           alert(data.error || 'Error al enviar mensajes.');
         }

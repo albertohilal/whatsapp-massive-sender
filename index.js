@@ -24,6 +24,8 @@ const rubrosRoutes = require('./routes/rubros');
 const enviarManualRoutes = require('./routes/enviar_manual');
 const marcarEnviadoRoute = require('./routes/marcar_enviado');
 
+
+
 app.use('/api/campanias', campaniasRoutes);
 app.use('/api/envios', enviosRoutes);
 app.use('/api/generar-envios', generarEnviosRoutes);

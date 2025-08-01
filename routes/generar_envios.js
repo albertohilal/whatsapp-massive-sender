@@ -1,75 +1,76 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db/connection');
+const db = require('../db/connection');
+const whatsappInstance = require('../bot/whatsapp_instance');
+const moment = require('moment');
 
-// CORREGIDO: usar ruta base "/"
 router.post('/', async (req, res) => {
-  try {
-    const { campania_id, place_ids } = req.body;
+  const { envios } = req.body;
 
-    if (!campania_id || !Array.isArray(place_ids) || place_ids.length === 0) {
-      return res.status(400).json({ error: 'Datos incompletos' });
-    }
-
-    const fecha = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-    // Obtener plantilla de la campaña
-    const [[campania]] = await pool.query(
-      `SELECT mensaje FROM ll_campanias_whatsapp WHERE id = ?`,
-      [campania_id]
-    );
-
-    if (!campania || !campania.mensaje) {
-      return res.status(404).json({ error: 'Campaña no encontrada o sin mensaje' });
-    }
-
-    const plantilla = campania.mensaje;
-
-    // Obtener datos de los lugares con rubro
-    const [lugares] = await pool.query(
-      `
-      SELECT 
-        l.place_id, 
-        l.nombre, 
-        l.telefono_wapp, 
-        r.nombre AS rubro
-      FROM ll_lugares l
-      LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-      WHERE l.place_id IN (?) AND l.telefono_wapp IS NOT NULL AND l.telefono_wapp != ''
-      `,
-      [place_ids]
-    );
-
-    // Armar valores a insertar
-    const valores = lugares.map(l => {
-      const mensajePersonalizado = plantilla
-        .replace(/{{\s*nombre\s*}}/gi, l.nombre || '')
-        .replace(/{{\s*rubro\s*}}/gi, l.rubro || '');
-
-      return [
-        campania_id,
-        l.telefono_wapp,
-        l.nombre || '',
-        mensajePersonalizado,
-        'pendiente',
-        fecha
-      ];
-    });
-
-    // Insertar en ll_envios_whatsapp
-    const sql = `
-      INSERT INTO ll_envios_whatsapp 
-        (campania_id, telefono_wapp, nombre_destino, mensaje_final, estado, fecha_envio)
-      VALUES ?
-    `;
-
-    await pool.query(sql, [valores]);
-
-    res.json({ success: true, inserted: valores.length });
-  } catch (error) {
-    console.error('Error al generar envíos:', error);
-    res.status(500).json({ error: 'Error al generar envíos' });
+  if (!Array.isArray(envios) || envios.length === 0) {
+    return res.status(400).json({ error: 'No se proporcionaron mensajes para enviar.' });
   }
+
+  let enviados = 0;
+  const resultados = [];
+
+  for (const envio of envios) {
+    const { id, telefono, texto } = envio;
+
+    try {
+      const resultado = await whatsappInstance.sendMessage(`${telefono}@c.us`, texto);
+
+      if (resultado?.id?.id) {
+        const fechaEnvio = moment().format('YYYY-MM-DD HH:mm:ss');
+
+        const updateResult = await db.query(
+          `UPDATE ll_envios_whatsapp
+           SET estado = ?, fecha_envio = ?
+           WHERE id = ?`,
+          ['enviado', fechaEnvio, id]
+        );
+
+        resultados.push({
+          id,
+          telefono,
+          estado: 'enviado',
+          fecha_envio: fechaEnvio,
+          updateResult
+        });
+
+        console.log(`✅ Mensaje enviado y marcado como 'enviado' para ID ${id}`);
+        enviados++;
+      } else {
+        resultados.push({
+          id,
+          telefono,
+          estado: 'error',
+          error: 'No se generó ID de mensaje'
+        });
+
+        console.error(`❌ No se pudo enviar el mensaje a ${telefono}`, resultado);
+      }
+
+    } catch (error) {
+      resultados.push({
+        id,
+        telefono,
+        estado: 'error',
+        error: error.message
+      });
+
+      console.error(`❌ Error al enviar el mensaje a ${telefono}`, error);
+    }
+  }
+
+  console.log('\n📋 Resultado completo de los envíos:');
+  console.table(resultados, ['id', 'telefono', 'estado', 'fecha_envio']);
+
+  res.json({
+    mensaje: `Se marcaron como listos ${enviados} mensajes.`,
+    enviados,
+    resultados
+  });
 });
 
 module.exports = router;

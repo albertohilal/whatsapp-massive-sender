@@ -1,24 +1,36 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/connection');
+const { getCliente } = require('../bot/whatsapp_instance');
 
 router.post('/', async (req, res) => {
-  const { ids } = req.body;
-
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return res.status(400).json({ error: 'No se recibieron IDs válidos.' });
-  }
-
   try {
-    const placeholders = ids.map(() => '?').join(', ');
-    const query = `UPDATE ll_envios_whatsapp SET estado = 'listo', fecha_envio = NOW() WHERE id IN (${placeholders})`;
-    const [result] = await db.query(query, ids);
+    const { seleccionados } = req.body;
+    const client = getCliente();
 
-    const cantidad = result.affectedRows || ids.length;
-    res.json({ success: true, mensaje: `Se marcaron como listos ${cantidad} mensajes.` });
+    for (const id of seleccionados) {
+      const [rows] = await db.query(
+        'SELECT telefono_wapp, mensaje_final FROM ll_envios_whatsapp WHERE id = ?',
+        [id]
+      );
+
+      if (rows.length > 0) {
+        const { telefono_wapp, mensaje_final } = rows[0];
+
+        await client.sendText(`${telefono_wapp}@c.us`, mensaje_final);
+
+        await db.query(
+          'UPDATE ll_envios_whatsapp SET estado = ?, fecha_envio = NOW() WHERE id = ?',
+          ['enviado', id]
+        );
+        console.log(`✅ Mensaje enviado a ${telefono_wapp}`);
+      }
+    }
+
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error en /api/enviar-manual:', error);
-    res.status(500).json({ error: 'Error al marcar mensajes como listos.' });
+    console.error('❌ Error al enviar mensaje:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
