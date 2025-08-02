@@ -8,7 +8,6 @@ const cors = require('cors');
 const { iniciarCliente } = require('./bot/whatsapp_instance');
 iniciarCliente(); // 🔁 Inicia la conexión con WhatsApp Web
 
-
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -24,8 +23,7 @@ const rubrosRoutes = require('./routes/rubros');
 const enviarManualRoutes = require('./routes/enviar_manual');
 const marcarEnviadoRoute = require('./routes/marcar_enviado');
 
-
-
+// Montaje de rutas
 app.use('/api/campanias', campaniasRoutes);
 app.use('/api/envios', enviosRoutes);
 app.use('/api/generar-envios', generarEnviosRoutes);
@@ -35,12 +33,12 @@ app.use('/pm2', pm2Routes);
 app.use('/api/enviar-manual', enviarManualRoutes);
 app.use('/api/marcar-enviado', marcarEnviadoRoute);
 
-// Ruta principal
+// Ruta principal (HTML base)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Puerto desde .env o 3010 por defecto
+// Puerto desde .env o por defecto en 3010
 const PORT = process.env.PORT || 3010;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

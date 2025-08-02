@@ -40,7 +40,15 @@ function getCliente() {
   return client;
 }
 
+async function sendMessage(numero, mensaje) {
+  if (!client) throw new Error('Cliente de WhatsApp no está inicializado.');
+  // El número debe estar en formato internacional, ej: 54911xxxxxxx@c.us
+  const destinatario = numero.includes('@c.us') ? numero : `${numero}@c.us`;
+  return client.sendText(destinatario, mensaje);
+}
+
 module.exports = {
   iniciarCliente,
-  getCliente
+  getCliente,
+  sendMessage // <-- exporta la función aquí
 };

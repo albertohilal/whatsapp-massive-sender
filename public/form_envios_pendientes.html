@@ -8,21 +8,22 @@
 </head>
 <body class="p-4">
   <div class="container">
-    <h2>Mensajes pendientes de envío</h2>
+    <h2 class="mb-4">Mensajes pendientes de envío</h2>
 
-    <div class="mb-3">
-      <label class="form-label">Seleccionar campaña</label>
-      <select id="select-campania" class="form-select"></select>
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="select-campania" class="form-label">Seleccionar campaña</label>
+        <select id="select-campania" class="form-select"></select>
+      </div>
     </div>
 
-    <div id="tabla-pendientes"></div>
+    <div id="tabla-pendientes" class="mb-3"></div>
 
-    <button class="btn btn-primary mt-3" onclick="enviarSeleccionados()">Enviar seleccionados</button>
+    <button class="btn btn-success" onclick="enviarSeleccionados()">Enviar seleccionados</button>
   </div>
 
   <script>
     let pendientes = [];
-    let campaniaActual = null;
 
     async function cargarCampanias() {
       try {
@@ -35,8 +36,7 @@
         ).join('');
 
         select.addEventListener('change', cargarPendientes);
-        campaniaActual = select.value;
-        cargarPendientes(); // carga inicial
+        cargarPendientes(); // Carga inicial
       } catch (error) {
         console.error('Error al cargar campañas:', error);
         alert('Error al cargar campañas.');
@@ -46,8 +46,6 @@
     async function cargarPendientes() {
       const campania_id = document.getElementById('select-campania').value;
       if (!campania_id) return;
-
-      campaniaActual = campania_id;
 
       try {
         const res = await fetch(`/api/envios?campania_id=${campania_id}`);
@@ -62,22 +60,26 @@
     function renderizarPendientes() {
       const contenedor = document.getElementById('tabla-pendientes');
 
-      if (pendientes.length === 0) {
-        contenedor.innerHTML = '<p>No hay mensajes pendientes.</p>';
+      if (!Array.isArray(pendientes) || pendientes.length === 0) {
+        contenedor.innerHTML = '<p class="text-muted">No hay mensajes pendientes.</p>';
         return;
       }
 
       const tabla = `
-        <table class="table table-bordered">
-          <thead>
+        <table class="table table-bordered table-striped">
+          <thead class="table-light">
             <tr>
-              <th></th><th>ID</th><th>Teléfono</th><th>Mensaje</th><th>Estado</th>
+              <th></th>
+              <th>ID</th>
+              <th>Teléfono</th>
+              <th>Mensaje</th>
+              <th>Estado</th>
             </tr>
           </thead>
           <tbody>
             ${pendientes.map(p => `
               <tr>
-                <td><input type="checkbox" name="seleccionados[]" value="${p.id}" checked></td>
+                <td><input type="checkbox" data-id="${p.id}" checked></td>
                 <td>${p.id}</td>
                 <td>${p.telefono_wapp}</td>
                 <td>${p.mensaje_final}</td>
@@ -91,8 +93,8 @@
     }
 
     async function enviarSeleccionados() {
-      const seleccionados = Array.from(document.querySelectorAll('input[name="seleccionados[]"]:checked'))
-        .map(cb => parseInt(cb.value))
+      const seleccionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(cb => parseInt(cb.getAttribute('data-id')))
         .filter(id => !isNaN(id));
 
       if (seleccionados.length === 0) {
@@ -100,21 +102,26 @@
         return;
       }
 
-      const confirmar = confirm(`¿Seguro que querés enviar ${seleccionados.length} mensajes ahora?`);
+      const confirmar = confirm(`¿Seguro que querés enviar ${seleccionados.length} mensaje(s) ahora?`);
       if (!confirmar) return;
 
       try {
         const res = await fetch('/api/enviar-manual', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seleccionados })
+          body: JSON.stringify({ ids: seleccionados }) // ✅ Solo enviamos los IDs
         });
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Respuesta no es JSON');
+        }
 
         const data = await res.json();
 
         if (res.ok) {
-          alert(data.mensaje || "Mensajes enviados correctamente.");
-          cargarPendientes(); // recargar tabla
+          alert(data.mensaje || 'Mensajes enviados con éxito.');
+          cargarPendientes(); // Recarga la tabla
         } else {
           alert(data.error || 'Error al enviar mensajes.');
         }

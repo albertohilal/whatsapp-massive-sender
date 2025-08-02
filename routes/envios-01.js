@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../db/connection');
 
-// ✅ Obtener mensajes pendientes por campaña
+// Obtener mensajes pendientes por campaña
 router.get('/', async (req, res) => {
   const campaniaId = req.query.campania_id;
 
@@ -17,15 +17,14 @@ router.get('/', async (req, res) => {
        WHERE campania_id = ? AND estado = 'pendiente'`,
       [campaniaId]
     );
-
     res.json(rows);
   } catch (error) {
-    console.error('❌ Error al obtener pendientes:', error);
+    console.error('Error al obtener pendientes:', error);
     res.status(500).json({ error: 'Error al obtener pendientes' });
   }
 });
 
-// ✅ Envío manual desde formulario
+// Envío manual desde formulario (corrige formato del frontend)
 router.post('/enviar-masivo-manual', async (req, res) => {
   const mensajes = req.body.mensajes;
   let enviados = 0;
@@ -36,21 +35,18 @@ router.post('/enviar-masivo-manual', async (req, res) => {
 
   try {
     for (const msg of mensajes) {
-      const { id, telefono_wapp, mensaje_final } = msg;
-
-      if (!id || !telefono_wapp || !mensaje_final) {
-        console.warn('⚠️ Mensaje con formato inválido:', msg);
+      if (!msg.id || !msg.telefono_wapp || !msg.mensaje_final) {
+        console.warn('❌ Mensaje con formato inválido:', msg);
         continue;
       }
 
-      console.log(`📤 Enviando a ${telefono_wapp}: ${mensaje_final}`);
+      console.log(`📤 Enviando a ${msg.telefono_wapp}: ${msg.mensaje_final}`);
 
-      // Simulación de envío real, aquí deberías integrar tu lógica de envío WhatsApp
       await connection.query(
         `UPDATE ll_envios_whatsapp 
          SET estado = 'enviado', fecha_envio = NOW() 
          WHERE id = ? AND estado = 'pendiente'`,
-        [id]
+        [msg.id]
       );
 
       enviados++;
@@ -58,7 +54,7 @@ router.post('/enviar-masivo-manual', async (req, res) => {
 
     res.json({ enviados });
   } catch (error) {
-    console.error('❌ Error al enviar mensajes:', error);
+    console.error('Error al enviar mensajes:', error);
     res.status(500).json({ error: 'Error al enviar mensajes' });
   }
 });
