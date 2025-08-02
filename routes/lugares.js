@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
         l.telefono_wapp, 
         l.direccion,
         l.rubro_id,
-        r.nombre_es AS rubro
+        COALESCE(r.nombre_es, 'Sin rubro') AS rubro
       FROM ll_lugares l
       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
       ORDER BY l.nombre

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../db/connection');
 
-// ✅ Obtener mensajes pendientes por campaña
+// Obtener mensajes pendientes por campaña
 router.get('/', async (req, res) => {
   const campaniaId = req.query.campania_id;
 
@@ -25,41 +25,52 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Envío manual desde formulario
-router.post('/enviar-masivo-manual', async (req, res) => {
-  const mensajes = req.body.mensajes;
-  let enviados = 0;
-
-  if (!Array.isArray(mensajes)) {
-    return res.status(400).json({ error: 'mensajes debe ser un array' });
+// Agregar prospectos seleccionados a campaña
+router.post('/agregar-a-campania', async (req, res) => {
+  const { campaniaId, lugares } = req.body;
+  if (!campaniaId || !Array.isArray(lugares) || lugares.length === 0) {
+    return res.status(400).json({ success: false, error: 'Datos insuficientes' });
   }
 
   try {
-    for (const msg of mensajes) {
-      const { id, telefono_wapp, mensaje_final } = msg;
+    // Obtener el mensaje de la campaña
+    const [campaniaRows] = await connection.query(
+      `SELECT mensaje FROM ll_campanias_whatsapp WHERE id = ?`,
+      [campaniaId]
+    );
+    if (!campaniaRows.length) {
+      return res.status(404).json({ success: false, error: 'Campaña no encontrada' });
+    }
+    const mensajePlantilla = campaniaRows[0].mensaje;
 
-      if (!id || !telefono_wapp || !mensaje_final) {
-        console.warn('⚠️ Mensaje con formato inválido:', msg);
-        continue;
-      }
+    // Obtener datos de los lugares seleccionados
+    const [lugaresData] = await connection.query(
+      `SELECT id, nombre, telefono_wapp, rubro, direccion 
+       FROM ll_lugares 
+       WHERE id IN (?)`,
+      [lugares]
+    );
 
-      console.log(`📤 Enviando a ${telefono_wapp}: ${mensaje_final}`);
+    // Insertar en ll_envios_whatsapp
+    for (const lugar of lugaresData) {
+      // Reemplazar los placeholders en el mensaje
+      let mensajeFinal = mensajePlantilla
+        .replace(/{{nombre}}/gi, lugar.nombre)
+        .replace(/{{rubro}}/gi, lugar.rubro)
+        .replace(/{{direccion}}/gi, lugar.direccion);
 
-      // Simulación de envío real, aquí deberías integrar tu lógica de envío WhatsApp
       await connection.query(
-        `UPDATE ll_envios_whatsapp 
-         SET estado = 'enviado', fecha_envio = NOW() 
-         WHERE id = ? AND estado = 'pendiente'`,
-        [id]
+        `INSERT INTO ll_envios_whatsapp 
+          (campania_id, telefono_wapp, nombre_destino, mensaje_final, estado, fecha_envio, lugar_id)
+         VALUES (?, ?, ?, ?, 'pendiente', NULL, ?)`,
+        [campaniaId, lugar.telefono_wapp, lugar.nombre, mensajeFinal, lugar.id]
       );
-
-      enviados++;
     }
 
-    res.json({ enviados });
+    res.json({ success: true });
   } catch (error) {
-    console.error('❌ Error al enviar mensajes:', error);
-    res.status(500).json({ error: 'Error al enviar mensajes' });
+    console.error('❌ Error al agregar prospectos:', error);
+    res.status(500).json({ success: false, error: 'Error al agregar prospectos' });
   }
 });
 
