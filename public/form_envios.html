@@ -23,6 +23,13 @@
     <input type="text" id="filtroDireccion" class="form-control" placeholder="Ej: Av. San Martín">
   </div>
 
+  <div class="mb-3">
+    <label>
+      <input type="checkbox" id="filtroWappValido" />
+      Solo mostrar números válidos de WhatsApp
+    </label>
+  </div>
+
   <button id="filtrarBtn" class="btn btn-primary mb-4">Filtrar</button>
 
   <table class="table">
@@ -41,5 +48,17 @@
   <button class="btn btn-success">Agregar Seleccionados a Campaña</button>
 
   <script src="envios_front.js"></script>
+  <script>
+    // Ejemplo de cómo agregar el parámetro al filtrar
+    document.getElementById('filtrarBtn').addEventListener('click', () => {
+      const rubro = document.getElementById('filtroRubro').value;
+      const direccion = document.getElementById('filtroDireccion').value;
+      const soloValidos = document.getElementById('filtroWappValido').checked ? 1 : 0;
+      // Aquí deberías llamar a tu función de carga de prospectos, pasando el parámetro soloValidos
+      // Ejemplo:
+      cargarProspectos(rubro, direccion, soloValidos);
+    });
+    // La función cargarProspectos debe usar el parámetro soloValidos en la consulta al backend
+  </script>
 </body>
 </html>

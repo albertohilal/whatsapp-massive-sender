@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db/connection'); // Asegurate que este archivo existe
+const connection = require('../db/connection');
 
 // Obtener todas las campañas
 router.get('/', async (req, res) => {

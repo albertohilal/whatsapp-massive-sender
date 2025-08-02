@@ -6,7 +6,9 @@ const cors = require('cors');
 
 // Iniciar cliente de WhatsApp
 const { iniciarCliente } = require('./bot/whatsapp_instance');
-iniciarCliente(); // 🔁 Inicia la conexión con WhatsApp Web
+if (typeof iniciarCliente === 'function') {
+  iniciarCliente(); // 🔁 Inicia la conexión con WhatsApp Web
+}
 
 // Middlewares
 app.use(cors());
@@ -23,7 +25,7 @@ const rubrosRoutes = require('./routes/rubros');
 const enviarManualRoutes = require('./routes/enviar_manual');
 const marcarEnviadoRoute = require('./routes/marcar_enviado');
 
-// Montaje de rutas
+// Montaje de rutas (verifica que cada ruta exporte un router de Express)
 app.use('/api/campanias', campaniasRoutes);
 app.use('/api/envios', enviosRoutes);
 app.use('/api/generar-envios', generarEnviosRoutes);

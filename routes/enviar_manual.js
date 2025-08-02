@@ -15,11 +15,11 @@ router.post('/', async (req, res) => {
 
     // Recuperar los mensajes desde la base de datos
     const [rows] = await connection.query(
-  `SELECT id, telefono_wapp AS telefono, mensaje_final AS mensaje
-   FROM ll_envios_whatsapp
-   WHERE id IN (?) AND estado != 'enviado'`,
-  [ids]
-);
+      `SELECT id, telefono_wapp AS telefono, mensaje_final AS mensaje
+       FROM ll_envios_whatsapp
+       WHERE id IN (?) AND estado != 'enviado'`,
+      [ids]
+    );
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'No se encontraron mensajes pendientes para los IDs proporcionados' });
@@ -38,10 +38,10 @@ router.post('/', async (req, res) => {
       try {
         await sendMessage(telefono, mensaje);
 
-       await connection.query(
-  'UPDATE ll_envios_whatsapp SET estado = "enviado", fecha_envio = NOW() WHERE id = ?',
-  [id]
-);
+        await connection.query(
+          'UPDATE ll_envios_whatsapp SET estado = "enviado", fecha_envio = NOW() WHERE id = ?',
+          [id]
+        );
       } catch (err) {
         console.error(`❌ Error al enviar mensaje con ID ${id}:`, err.message);
       }

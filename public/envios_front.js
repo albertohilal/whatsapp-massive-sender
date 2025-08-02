@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Error cargando campañas:', err);
   }
 
-  // Cargar lugares
+  // Cargar lugares al inicio
   await cargarLugares();
 
   // Filtrar lugares
@@ -53,52 +53,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function cargarLugares() {
   const filtroRubro = document.getElementById('filtroRubro')?.value?.toLowerCase() || '';
   const filtroDireccion = document.getElementById('filtroDireccion')?.value?.toLowerCase() || '';
+  const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
+
   try {
-    const res = await fetch('/api/lugares');
+    // Construir la URL con los parámetros de filtro
+    const params = new URLSearchParams();
+    if (filtroRubro) params.append('rubro', filtroRubro);
+    if (filtroDireccion) params.append('direccion', filtroDireccion);
+    if (soloValidos) params.append('solo_validos', soloValidos);
+
+    const res = await fetch(`/api/lugares?${params.toString()}`);
     const lugares = await res.json();
     const tbody = document.getElementById('tablaProspectos');
     tbody.innerHTML = '';
 
-    lugares
-      .filter(lugar => {
-        const rubroMatch = filtroRubro === '' || (lugar.rubro && lugar.rubro.toLowerCase().includes(filtroRubro));
-        const direccionMatch = filtroDireccion === '' || (lugar.direccion && lugar.direccion.toLowerCase().includes(filtroDireccion));
-        return rubroMatch && direccionMatch;
-      })
-      .forEach(lugar => {
-        const tr = document.createElement('tr');
+    lugares.forEach(lugar => {
+      const tr = document.createElement('tr');
 
-        // Checkbox para seleccionar
-        const tdSelect = document.createElement('td');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = lugar.id;
-        tdSelect.appendChild(checkbox);
+      // Checkbox para seleccionar
+      const tdSelect = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = lugar.id;
+      tdSelect.appendChild(checkbox);
 
-        // Nombre
-        const tdNombre = document.createElement('td');
-        tdNombre.textContent = lugar.nombre;
+      // Nombre
+      const tdNombre = document.createElement('td');
+      tdNombre.textContent = lugar.nombre;
 
-        // Teléfono (de telefono_wapp)
-        const tdTelefono = document.createElement('td');
-        tdTelefono.textContent = lugar.telefono_wapp;
+      // Teléfono (de telefono_wapp)
+      const tdTelefono = document.createElement('td');
+      tdTelefono.textContent = lugar.telefono_wapp;
 
-        // Rubro
-        const tdRubro = document.createElement('td');
-        tdRubro.textContent = lugar.rubro;
+      // Rubro
+      const tdRubro = document.createElement('td');
+      tdRubro.textContent = lugar.rubro;
 
-        // Dirección
-        const tdDireccion = document.createElement('td');
-        tdDireccion.textContent = lugar.direccion;
+      // Dirección
+      const tdDireccion = document.createElement('td');
+      tdDireccion.textContent = lugar.direccion;
 
-        tr.appendChild(tdSelect);
-        tr.appendChild(tdNombre);
-        tr.appendChild(tdTelefono);
-        tr.appendChild(tdRubro);
-        tr.appendChild(tdDireccion);
+      tr.appendChild(tdSelect);
+      tr.appendChild(tdNombre);
+      tr.appendChild(tdTelefono);
+      tr.appendChild(tdRubro);
+      tr.appendChild(tdDireccion);
 
-        tbody.appendChild(tr);
-      });
+      tbody.appendChild(tr);
+    });
   } catch (err) {
     console.error('Error cargando lugares:', err);
   }

@@ -8,13 +8,11 @@ router.get('/status', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error conectando a PM2' });
     }
-
     pm2.list((err, processList) => {
       pm2.disconnect();
       if (err) {
         return res.status(500).json({ error: 'Error obteniendo procesos PM2' });
       }
-
       res.json(processList);
     });
   });
@@ -24,7 +22,6 @@ router.get('/status', (req, res) => {
 router.post('/start', (req, res) => {
   pm2.connect(err => {
     if (err) return res.status(500).json({ error: 'Error conectando a PM2' });
-
     pm2.start({
       script: 'index.js',
       name: 'whatsapp-massive',
@@ -40,7 +37,6 @@ router.post('/start', (req, res) => {
 router.post('/stop', (req, res) => {
   pm2.connect(err => {
     if (err) return res.status(500).json({ error: 'Error conectando a PM2' });
-
     pm2.stop('whatsapp-massive', err => {
       pm2.disconnect();
       if (err) return res.status(500).json({ error: 'Error deteniendo proceso' });
@@ -53,7 +49,6 @@ router.post('/stop', (req, res) => {
 router.post('/restart', (req, res) => {
   pm2.connect(err => {
     if (err) return res.status(500).json({ error: 'Error conectando a PM2' });
-
     pm2.restart('whatsapp-massive', err => {
       pm2.disconnect();
       if (err) return res.status(500).json({ error: 'Error reiniciando proceso' });

@@ -45,9 +45,10 @@ router.post('/agregar-a-campania', async (req, res) => {
 
     // Obtener datos de los lugares seleccionados
     const [lugaresData] = await connection.query(
-      `SELECT id, nombre, telefono_wapp, rubro, direccion 
-       FROM ll_lugares 
-       WHERE id IN (?)`,
+      `SELECT id, nombre, telefono_wapp, COALESCE(r.nombre_es, 'Sin rubro') AS rubro, direccion 
+       FROM ll_lugares l
+       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+       WHERE l.id IN (?)`,
       [lugares]
     );
 
@@ -55,9 +56,9 @@ router.post('/agregar-a-campania', async (req, res) => {
     for (const lugar of lugaresData) {
       // Reemplazar los placeholders en el mensaje
       let mensajeFinal = mensajePlantilla
-        .replace(/{{nombre}}/gi, lugar.nombre)
-        .replace(/{{rubro}}/gi, lugar.rubro)
-        .replace(/{{direccion}}/gi, lugar.direccion);
+        .replace(/{{nombre}}/gi, lugar.nombre || '')
+        .replace(/{{rubro}}/gi, lugar.rubro || 'Sin rubro')
+        .replace(/{{direccion}}/gi, lugar.direccion || '');
 
       await connection.query(
         `INSERT INTO ll_envios_whatsapp 

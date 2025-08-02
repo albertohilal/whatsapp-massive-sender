@@ -2,23 +2,36 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/connection');
 
-// GET: Listar lugares
+// GET: Listar lugares con filtro por wapp_valido, rubro y dirección
 router.get('/', async (req, res) => {
   try {
-    const conn = await pool.getConnection();
-    const [rows] = await conn.query(`
-      SELECT 
-        l.id,
-        l.place_id, 
-        l.nombre, 
-        l.telefono_wapp, 
-        l.direccion,
-        l.rubro_id,
-        COALESCE(r.nombre_es, 'Sin rubro') AS rubro
+    const soloValidos = req.query.solo_validos === '1';
+    const filtroRubro = req.query.rubro ? req.query.rubro.trim() : '';
+    const filtroDireccion = req.query.direccion ? req.query.direccion.trim() : '';
+
+    let sql = `
+      SELECT l.id, l.place_id, l.nombre, l.telefono_wapp, l.direccion, l.rubro_id,
+             COALESCE(r.nombre_es, 'Sin rubro') AS rubro, l.wapp_valido
       FROM ll_lugares l
       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-      ORDER BY l.nombre
-    `);
+      WHERE 1=1
+    `;
+    const params = [];
+    if (soloValidos) {
+      sql += ' AND l.wapp_valido = 1 ';
+    }
+    if (filtroRubro) {
+      sql += ' AND COALESCE(r.nombre_es, "Sin rubro") LIKE ? ';
+      params.push(`%${filtroRubro}%`);
+    }
+    if (filtroDireccion) {
+      sql += ' AND l.direccion LIKE ? ';
+      params.push(`%${filtroDireccion}%`);
+    }
+    sql += ' ORDER BY l.nombre';
+
+    const conn = await pool.getConnection();
+    const [rows] = await conn.query(sql, params);
     conn.release();
     res.json(rows);
   } catch (error) {

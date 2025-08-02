@@ -4,6 +4,7 @@ const db = require('../db/connection');
 const whatsappInstance = require('../bot/whatsapp_instance');
 const moment = require('moment');
 
+// Ruta para enviar mensajes masivos desde una campaña
 router.post('/', async (req, res) => {
   const { envios } = req.body;
 
@@ -17,13 +18,24 @@ router.post('/', async (req, res) => {
   for (const envio of envios) {
     const { id, telefono, texto } = envio;
 
+    if (!telefono || !texto) {
+      resultados.push({
+        id,
+        telefono,
+        estado: 'error',
+        error: 'Datos incompletos'
+      });
+      console.warn(`⚠️ Datos incompletos para ID ${id}:`, envio);
+      continue;
+    }
+
     try {
       const resultado = await whatsappInstance.sendMessage(`${telefono}@c.us`, texto);
 
       if (resultado?.id?.id) {
         const fechaEnvio = moment().format('YYYY-MM-DD HH:mm:ss');
 
-        const updateResult = await db.query(
+        await db.query(
           `UPDATE ll_envios_whatsapp
            SET estado = ?, fecha_envio = ?
            WHERE id = ?`,
@@ -34,8 +46,7 @@ router.post('/', async (req, res) => {
           id,
           telefono,
           estado: 'enviado',
-          fecha_envio: fechaEnvio,
-          updateResult
+          fecha_envio: fechaEnvio
         });
 
         console.log(`✅ Mensaje enviado y marcado como 'enviado' para ID ${id}`);
