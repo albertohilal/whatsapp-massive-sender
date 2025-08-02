@@ -128,12 +128,16 @@
       document.getElementById('direccion').value = l.direccion || ''
       document.getElementById('telefono_wapp').value = l.telefono_wapp || ''
       document.getElementById('rubro_id').value = l.rubro_id || ''
+      // Si tienes un campo place_id en el formulario, agrégalo aquí
+      // document.getElementById('place_id').value = l.place_id || ''
       window.scrollTo(0, 0)
     }
 
     function resetForm() {
       document.getElementById('lugarForm').reset()
       document.getElementById('id').value = ''
+      // Si tienes un campo place_id en el formulario, agrégalo aquí
+      // document.getElementById('place_id').value = ''
     }
 
     async function eliminarLugar(id) {
@@ -146,14 +150,19 @@
     document.getElementById('lugarForm').addEventListener('submit', async (e) => {
       e.preventDefault()
       const data = {
-        id: document.getElementById('id').value,
         nombre: document.getElementById('nombre').value,
         direccion: document.getElementById('direccion').value,
         telefono_wapp: document.getElementById('telefono_wapp').value,
         rubro_id: document.getElementById('rubro_id').value
       }
-      const method = data.id ? 'PUT' : 'POST'
-      const url = data.id ? `/api/lugares/${data.id}` : '/api/lugares'
+      // Solo agrega place_id si existe y no está vacío
+      // const placeIdInput = document.getElementById('place_id')
+      // if (placeIdInput && placeIdInput.value) {
+      //   data.place_id = placeIdInput.value
+      // }
+      const id = document.getElementById('id').value
+      const method = id ? 'PUT' : 'POST'
+      const url = id ? `/api/lugares/${id}` : '/api/lugares'
       await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },

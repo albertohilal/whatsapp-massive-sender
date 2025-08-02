@@ -1,4 +1,3 @@
-// routes/lugares.js
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/connection');
@@ -14,19 +13,8 @@ router.get('/', async (req, res) => {
         l.nombre, 
         l.telefono_wapp, 
         l.direccion,
-        l.email,
-        l.sitio_web,
-        l.latitud,
-        l.longitud,
         l.rubro_id,
-        r.nombre_es AS rubro,
-        l.zona_id,
-        l.rating,
-        l.reviews,
-        l.tipos,
-        l.precio,
-        l.abierto,
-        l.created_at
+        r.nombre_es AS rubro
       FROM ll_lugares l
       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
       ORDER BY l.nombre
@@ -39,33 +27,22 @@ router.get('/', async (req, res) => {
   }
 });
 
+// POST: Crear lugar
 router.post('/', async (req, res) => {
   const data = req.body;
   try {
     const conn = await pool.getConnection();
     const sql = `
       INSERT INTO ll_lugares (
-        place_id, nombre, telefono, telefono_wapp, direccion, email, sitio_web,
-        latitud, longitud, rubro_id, zona_id, rating, reviews, tipos, precio, abierto, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        place_id, nombre, telefono_wapp, direccion, rubro_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, NOW())
     `;
     const [result] = await conn.query(sql, [
-      data.place_id || '',
+      data.place_id || null,
       data.nombre || '',
-      data.telefono || '',
       data.telefono_wapp || '',
       data.direccion || '',
-      data.email || '',
-      data.sitio_web || '',
-      data.latitud || null,
-      data.longitud || null,
-      data.rubro_id || null,
-      data.zona_id || null,
-      data.rating || null,
-      data.reviews || null,
-      data.tipos || '',
-      data.precio || '',
-      data.abierto || ''
+      data.rubro_id || null
     ]);
     conn.release();
     res.status(201).json({ mensaje: 'Lugar creado con éxito', id: result.insertId });
@@ -75,38 +52,29 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT: Editar lugar
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const data = req.body;
-
   try {
     const conn = await pool.getConnection();
-    const sql = `
-      UPDATE ll_lugares SET
-        place_id = ?, nombre = ?, telefono = ?, telefono_wapp = ?, direccion = ?, 
-        email = ?, sitio_web = ?, latitud = ?, longitud = ?, rubro_id = ?, zona_id = ?,
-        rating = ?, reviews = ?, tipos = ?, precio = ?, abierto = ?
-      WHERE id = ?
-    `;
-    await conn.query(sql, [
-      data.place_id || '',
-      data.nombre || '',
-      data.telefono || '',
-      data.telefono_wapp || '',
-      data.direccion || '',
-      data.email || '',
-      data.sitio_web || '',
-      data.latitud || null,
-      data.longitud || null,
-      data.rubro_id || null,
-      data.zona_id || null,
-      data.rating || null,
-      data.reviews || null,
-      data.tipos || '',
-      data.precio || '',
-      data.abierto || '',
-      id
-    ]);
+    let sql, params;
+    if (data.place_id) {
+      sql = `
+        UPDATE ll_lugares SET
+          place_id = ?, nombre = ?, telefono_wapp = ?, direccion = ?, rubro_id = ?
+        WHERE id = ?
+      `;
+      params = [data.place_id, data.nombre, data.telefono_wapp, data.direccion, data.rubro_id, id];
+    } else {
+      sql = `
+        UPDATE ll_lugares SET
+          nombre = ?, telefono_wapp = ?, direccion = ?, rubro_id = ?
+        WHERE id = ?
+      `;
+      params = [data.nombre, data.telefono_wapp, data.direccion, data.rubro_id, id];
+    }
+    await conn.query(sql, params);
     conn.release();
     res.json({ mensaje: 'Lugar actualizado correctamente' });
   } catch (error) {
@@ -115,6 +83,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// DELETE: Eliminar lugar
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
