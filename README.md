@@ -49,6 +49,12 @@ Define las rutas del backend (API) para trabajar con campañas, lugares y envío
 - `GET /api/lugares`  
   Devuelve todos los lugares (destinatarios) almacenados. Se utiliza como fuente para las campañas.
 
+- `PUT /api/lugares/:id`  
+  Permite editar los datos de un lugar.
+
+- `DELETE /api/lugares/:id`  
+  Permite eliminar un lugar.
+
 #### `routes/generar_envios.js`
 
 - `POST /api/generar-envios`  
@@ -73,7 +79,7 @@ Las tablas clave utilizadas en el sistema son:
   Cada registro representa un mensaje a enviar. Tiene `telefono_wapp`, `mensaje_final`, `estado` y `fecha_envio`.
 
 - `ll_lugares`  
-  Destinatarios de las campañas. Contiene nombres y teléfonos de contacto.
+  Destinatarios de las campañas. Contiene nombres y teléfonos de contacto, rubro y el campo `wapp_valido` que indica si el número es válido en WhatsApp.
 
 ---
 
@@ -98,7 +104,20 @@ Las tablas clave utilizadas en el sistema son:
 
 ---
 
+## 🛠️ Verificación de números válidos de WhatsApp
+
+Para verificar automáticamente si los números en la tabla `ll_lugares` son válidos en WhatsApp y actualizar el campo `wapp_valido`, ejecuta el siguiente script:
+
+```bash
+node scripts/verificar_wapp_lugares.js
+```
+
+- El script recorre los registros en tandas de 50, dejando un tiempo de espera entre tandas.
+- Marca el campo `wapp_valido` como `1` si el número es válido, `0` si no lo es o está vacío/incorrecto.
+- Es independiente del servidor principal (`index.js`).
+
+---
+
 ## ⚠️ Notas
 
-- La autenticación con WhatsApp se realiza escaneando un QR al iniciar el bot.
-- Los datos generados en `.wwebjs_auth/` y `.wwebjs_cache/` no deben subirse a GitHub.
+- La autenticación con WhatsApp
