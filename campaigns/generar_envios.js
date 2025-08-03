@@ -44,6 +44,7 @@ async function generarEnvios() {
       WHERE l.telefono IS NOT NULL
         AND LENGTH(l.telefono) = 13
         AND l.telefono LIKE '54911%'
+        AND l.wapp_valido = 1
         AND l.telefono NOT IN (
           SELECT telefono FROM ll_envios_whatsapp WHERE campania_id = ?
         )
