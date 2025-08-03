@@ -14,9 +14,9 @@
 ├── package-lock.json
 ├── public
 │   ├── dashboard.html
+│   ├── envios_front.js
 │   ├── favicon.ico
 │   ├── form_campania.html
-│   ├── form_envios-1.html
 │   ├── form_envios.html
 │   ├── form_envios_pendientes.html
 │   ├── index.html
@@ -26,13 +26,14 @@
 ├── routes
 │   ├── campanias.js
 │   ├── enviar_manual.js
-│   ├── envios-01.js
 │   ├── envios.js
 │   ├── generar_envios.js
 │   ├── lugares.js
 │   ├── marcar_enviado.js
 │   ├── pm2.js
 │   └── rubros.js
+├── scripts
+│   └── verificar_wapp_lugares.js
 ├── test_browser.js
 ├── tokens
 │   └── whatsapp-massive-sender
@@ -66,9 +67,9 @@
 │       ├── SafetyTips
 │       ├── segmentation_platform
 │       ├── ShaderCache
-│       ├── SingletonCookie -> 18386656499557686120
-│       ├── SingletonLock -> beto-Latitude-5490-5684
-│       ├── SingletonSocket -> /tmp/.com.google.Chrome.BReT3l/SingletonSocket
+│       ├── SingletonCookie -> 133369721957176890
+│       ├── SingletonLock -> beto-Latitude-5490-77964
+│       ├── SingletonSocket -> /tmp/.com.google.Chrome.6g12n4/SingletonSocket
 │       ├── SSLErrorAssistant
 │       ├── Subresource Filter
 │       ├── TpcdMetadata
@@ -78,4 +79,4 @@
 │       └── ZxcvbnData
 └── whatsapp_debug.js
 
-38 directories, 40 files
+39 directories, 40 files
