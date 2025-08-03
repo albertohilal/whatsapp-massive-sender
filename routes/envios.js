@@ -48,7 +48,7 @@ router.post('/agregar-a-campania', async (req, res) => {
       `SELECT id, nombre, telefono_wapp, COALESCE(r.nombre_es, 'Sin rubro') AS rubro, direccion 
        FROM ll_lugares l
        LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-       WHERE l.id IN (?)`,
+       WHERE l.id IN (?) AND l.wapp_valido = 1`,
       [lugares]
     );
 
