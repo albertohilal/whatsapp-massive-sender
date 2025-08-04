@@ -121,3 +121,5 @@ node scripts/verificar_wapp_lugares.js
 ## ⚠️ Notas
 
 - La autenticación con WhatsApp
+
+⚠️ Este proyecto contiene dependencias con vulnerabilidades conocidas. Se ha decidido mantener las versiones actuales por compatibilidad con `venom-bot` y `whatsapp-web.js`. Se revisará periódicamente la posibilidad de actualizar sin romper funcionalidad.

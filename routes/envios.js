@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../db/connection');
+const {
+  obtenerEnvios,
+  obtenerEnviosPorCampania,
+  obtenerEnviosPendientes,
+  obtenerEstadisticasEnvios
+} = require('../controllers/enviosController');
 
 // Obtener mensajes pendientes por campaña
 router.get('/', async (req, res) => {
@@ -74,5 +80,18 @@ router.post('/agregar-a-campania', async (req, res) => {
     res.status(500).json({ success: false, error: 'Error al agregar prospectos' });
   }
 });
+
+// Nuevas rutas usando el controlador
+// GET /envios → obtenerEnvios
+router.get('/envios', obtenerEnvios);
+
+// GET /envios/campania/:id → obtenerEnviosPorCampania
+router.get('/envios/campania/:id', obtenerEnviosPorCampania);
+
+// GET /envios/pendientes → obtenerEnviosPendientes
+router.get('/envios/pendientes', obtenerEnviosPendientes);
+
+// GET /envios/estadisticas/:campania_id → obtenerEstadisticasEnvios
+router.get('/envios/estadisticas/:campania_id', obtenerEstadisticasEnvios);
 
 module.exports = router;
