@@ -51,6 +51,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function cargarLugares() {
+  const statusDiv = document.getElementById('statusMessage');
+  statusDiv.style.display = 'block';
+  statusDiv.textContent = 'Cargando prospectos...';
+  
+  const campaniaId = document.getElementById('campaniaSelect')?.value || '';
   const filtroRubro = document.getElementById('filtroRubro')?.value?.toLowerCase() || '';
   const filtroDireccion = document.getElementById('filtroDireccion')?.value?.toLowerCase() || '';
   const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
@@ -58,16 +63,46 @@ async function cargarLugares() {
   try {
     // Construir la URL con los parámetros de filtro
     const params = new URLSearchParams();
+    if (campaniaId) params.append('campania', campaniaId);
     if (filtroRubro) params.append('rubro', filtroRubro);
     if (filtroDireccion) params.append('direccion', filtroDireccion);
-    if (soloValidos) params.append('solo_validos', soloValidos);
+    if (soloValidos) params.append('wapp_valido', soloValidos);
 
-    const res = await fetch(`/api/lugares?${params.toString()}`);
-    const lugares = await res.json();
+    const url = `/api/envios/filtrar-prospectos?${params.toString()}`;
+    console.log('🚀 Llamando a URL:', url);
+    
+    const res = await fetch(url);
+    console.log('📡 Response status:', res.status);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('❌ Error HTTP:', res.status, errorText);
+      statusDiv.textContent = `Error del servidor (${res.status}): ${errorText}`;
+      statusDiv.className = 'alert alert-danger mb-3';
+      return;
+    }
+    
+    const data = await res.json();
+    console.log('📦 Data recibida:', Array.isArray(data) ? `Array con ${data.length} elementos` : data);
+    
     const tbody = document.getElementById('tablaProspectos');
     tbody.innerHTML = '';
 
-    lugares.forEach(lugar => {
+    // Verificar si la respuesta es un array válido
+    if (!Array.isArray(data)) {
+      console.error('❌ Error: La respuesta no es un array válido:', data);
+      statusDiv.textContent = 'Error: Respuesta inválida del servidor';
+      statusDiv.className = 'alert alert-danger mb-3';
+      if (data.error) {
+        console.error('Error del servidor:', data.error);
+      }
+      return;
+    }
+
+    const lugares = data;
+    statusDiv.textContent = `Cargando ${lugares.length} prospectos...`;
+    
+    lugares.forEach((lugar) => {
       const tr = document.createElement('tr');
 
       // Checkbox para seleccionar
@@ -83,7 +118,7 @@ async function cargarLugares() {
 
       // Teléfono (de telefono_wapp)
       const tdTelefono = document.createElement('td');
-      tdTelefono.textContent = lugar.telefono_wapp;
+      tdTelefono.textContent = lugar.telefono_wapp || 'N/A';
 
       // Rubro
       const tdRubro = document.createElement('td');
@@ -101,7 +136,18 @@ async function cargarLugares() {
 
       tbody.appendChild(tr);
     });
+    
+    statusDiv.textContent = `✅ ${lugares.length} prospectos cargados exitosamente`;
+    statusDiv.className = 'alert alert-success mb-3';
+    
+    // Ocultar mensaje después de 3 segundos
+    setTimeout(() => {
+      statusDiv.style.display = 'none';
+    }, 3000);
+    
   } catch (err) {
     console.error('Error cargando lugares:', err);
+    statusDiv.textContent = '❌ Error al cargar prospectos: ' + err.message;
+    statusDiv.className = 'alert alert-danger mb-3';
   }
 }
