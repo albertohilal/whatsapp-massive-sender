@@ -32,6 +32,8 @@
 
   <button id="filtrarBtn" class="btn btn-primary mb-4">Filtrar</button>
 
+  <div id="statusMessage" class="alert alert-info mb-3" style="display: none;"></div>
+
   <table class="table">
     <thead>
       <tr>
@@ -48,17 +50,5 @@
   <button class="btn btn-success">Agregar Seleccionados a Campaña</button>
 
   <script src="envios_front.js"></script>
-  <script>
-    // Ejemplo de cómo agregar el parámetro al filtrar
-    document.getElementById('filtrarBtn').addEventListener('click', () => {
-      const rubro = document.getElementById('filtroRubro').value;
-      const direccion = document.getElementById('filtroDireccion').value;
-      const soloValidos = document.getElementById('filtroWappValido').checked ? 1 : 0;
-      // Aquí deberías llamar a tu función de carga de prospectos, pasando el parámetro soloValidos
-      // Ejemplo:
-      cargarProspectos(rubro, direccion, soloValidos);
-    });
-    // La función cargarProspectos debe usar el parámetro soloValidos en la consulta al backend
-  </script>
 </body>
 </html>

@@ -11,7 +11,7 @@ Contiene la lógica del bot de WhatsApp que se conecta con WhatsApp Web mediante
 Contiene formularios y vistas web relacionadas con la creación de campañas y el control de los envíos.
 
 - `form_campania.html`: Formulario para crear una nueva campaña.
-- `form_envios.html`: Vista para generar envíos en lote desde una campaña existente.
+- `form_envios.html`: **MEJORADO:** Vista para seleccionar y agregar prospectos a campañas con filtros avanzados (rubro, dirección, WhatsApp válido).
 - `form_envios_pendientes.html`: Vista para revisar los mensajes pendientes y enviarlos de manera manual y selectiva.
 
 ### 📁 `/controllers/`
@@ -55,6 +55,26 @@ Define las rutas del backend (API) para trabajar con campañas, lugares y envío
 - `DELETE /api/lugares/:id`  
   Permite eliminar un lugar.
 
+#### `routes/envios.js`
+
+- `GET /api/envios/filtrar-prospectos`  
+  **NUEVA FUNCIONALIDAD:** Filtra prospectos disponibles para campañas. Permite filtrar por rubro, dirección y validez de WhatsApp. Excluye automáticamente lugares que ya tienen envíos pendientes o enviados.
+
+- `POST /api/envios/agregar-a-campania`  
+  **NUEVA FUNCIONALIDAD:** Agrega prospectos seleccionados a una campaña específica. Personaliza automáticamente los mensajes con placeholders `{{nombre}}`, `{{rubro}}` y `{{direccion}}`.
+
+- `GET /api/envios`  
+  Obtiene todos los envíos del sistema.
+
+- `GET /api/envios/campania/:id`  
+  Obtiene envíos específicos de una campaña.
+
+- `GET /api/envios/pendientes`  
+  Obtiene todos los envíos pendientes del sistema.
+
+- `GET /api/envios/estadisticas/:campania_id`  
+  Obtiene estadísticas de envíos para una campaña específica.
+
 #### `routes/generar_envios.js`
 
 - `POST /api/generar-envios`  
@@ -73,13 +93,25 @@ Define las rutas del backend (API) para trabajar con campañas, lugares y envío
 Las tablas clave utilizadas en el sistema son:
 
 - `ll_campanias_whatsapp`  
-  Contiene las campañas con `id`, `nombre`, `mensaje_base`.
+  Contiene las campañas con `id`, `nombre`, `mensaje` (plantilla con placeholders).
 
 - `ll_envios_whatsapp`  
-  Cada registro representa un mensaje a enviar. Tiene `telefono_wapp`, `mensaje_final`, `estado` y `fecha_envio`.
+  Cada registro representa un mensaje a enviar. Incluye `telefono_wapp`, `mensaje_final` (personalizado), `estado`, `fecha_envio` y `lugar_id` para referencia.
 
 - `ll_lugares`  
-  Destinatarios de las campañas. Contiene nombres y teléfonos de contacto, rubro y el campo `wapp_valido` que indica si el número es válido en WhatsApp.
+  Destinatarios de las campañas. Contiene `nombre`, `telefono_wapp`, `direccion`, `rubro_id` y `wapp_valido` que indica si el número es válido en WhatsApp.
+
+- `ll_rubros`  
+  Categorías de los lugares. Contiene `id` y `nombre_es` para clasificar los prospectos.
+
+### 🆕 Funcionalidades de Filtrado Inteligente
+
+El sistema ahora incluye filtrado avanzado que:
+- **Excluye automáticamente** lugares que ya tienen envíos pendientes o enviados
+- **Filtra por rubro** (ej: "rest" para restaurantes)
+- **Filtra por dirección** (ej: "Lanús" para ubicaciones específicas)
+- **Solo números válidos** de WhatsApp cuando se selecciona la opción
+- **Personalización automática** de mensajes con `{{nombre}}`, `{{rubro}}`, `{{direccion}}`
 
 ---
 
@@ -98,9 +130,48 @@ Las tablas clave utilizadas en el sistema son:
    ```
 
 4. Acceder desde el navegador a:
-   - `http://localhost:3010/form_campania.html`
-   - `http://localhost:3010/form_envios.html`
-   - `http://localhost:3010/form_envios_pendientes.html`
+   - `http://localhost:3010/form_campania.html` - Crear campañas
+   - `http://localhost:3010/form_envios.html` - **MEJORADO:** Seleccionar prospectos con filtros avanzados
+   - `http://localhost:3010/form_envios_pendientes.html` - Gestionar envíos pendientes
+
+### 🎯 Flujo de Trabajo Recomendado
+
+1. **Crear una campaña** en `/form_campania.html`
+   - Define el nombre y mensaje con placeholders `{{nombre}}`, `{{rubro}}`, `{{direccion}}`
+
+2. **Agregar prospectos** en `/form_envios.html`
+   - Filtra por rubro (ej: "rest" para restaurantes)
+   - Filtra por ubicación (ej: "Lanús")
+   - Selecciona solo números válidos de WhatsApp
+   - Selecciona prospectos específicos y agrégalos a la campaña
+
+3. **Gestionar envíos** en `/form_envios_pendientes.html`
+   - Revisa los mensajes personalizados generados
+   - Envía de manera selectiva o masiva
+
+---
+
+## 🆕 Últimas Mejoras Implementadas
+
+### ✅ Sistema de Filtrado Inteligente
+- **Filtrado automático**: Excluye lugares que ya tienen envíos pendientes o enviados
+- **Filtros dinámicos**: Por rubro, dirección y validez de WhatsApp
+- **Interfaz mejorada**: Selección múltiple con checkboxes y contadores en tiempo real
+
+### ✅ Gestión Avanzada de Prospectos
+- **Agregado selectivo**: Selecciona prospectos específicos para cada campaña
+- **Personalización automática**: Los mensajes se personalizan automáticamente con datos del prospecto
+- **Validación robusta**: Verificación de datos y manejo de errores mejorado
+
+### ✅ Mejoras en la Base de Datos
+- **Consultas optimizadas**: Uso de JOIN y alias para evitar ambigüedades
+- **Integridad referencial**: Relaciones mejoradas entre tablas
+- **Logging detallado**: Registro completo de operaciones para debugging
+
+### ✅ Interfaz de Usuario
+- **Mensajes de estado**: Feedback visual del estado de las operaciones
+- **Filtros en tiempo real**: Resultados actualizados dinámicamente
+- **Diseño responsivo**: Compatible con diferentes tamaños de pantalla
 
 ---
 
@@ -120,4 +191,9 @@ node scripts/verificar_wapp_lugares.js
 
 ## ⚠️ Notas
 
-- La autenticación con WhatsApp
+- **Autenticación con WhatsApp**: El sistema utiliza WhatsApp Web a través del navegador. La primera vez requiere escanear el código QR.
+- **Gestión de sesión**: Las sesiones se mantienen activas automáticamente.
+- **Rate limiting**: Se recomienda no enviar más de 50 mensajes por minuto para evitar bloqueos.
+- **Personalización**: Los mensajes soportan placeholders `{{nombre}}`, `{{rubro}}` y `{{direccion}}` que se reemplazan automáticamente.
+
+⚠️ Este proyecto contiene dependencias con vulnerabilidades conocidas. Se ha decidido mantener las versiones actuales por compatibilidad con `venom-bot` y `whatsapp-web.js`. Se revisará periódicamente la posibilidad de actualizar sin romper funcionalidad.
