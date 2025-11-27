@@ -61,12 +61,19 @@ async function cargarLugares() {
   const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
 
   try {
+    // Determinar el cliente_id según la sesión activa
+    // Ejemplo: puedes obtenerlo de una variable global, del backend, o del selector de sesión
+    // Aquí lo dejamos fijo para Haby (51) y Beto (1) como ejemplo
+    let cliente_id = 51; // Cambia dinámicamente según la sesión activa
+    // Si tienes un selector de sesión, puedes obtener el cliente_id correspondiente
+
     // Construir la URL con los parámetros de filtro
     const params = new URLSearchParams();
     if (campaniaId) params.append('campania', campaniaId);
     if (filtroRubro) params.append('rubro', filtroRubro);
     if (filtroDireccion) params.append('direccion', filtroDireccion);
     if (soloValidos) params.append('wapp_valido', soloValidos);
+    params.append('cliente_id', cliente_id);
 
     const url = `/api/envios/filtrar-prospectos?${params.toString()}`;
     console.log('🚀 Llamando a URL:', url);

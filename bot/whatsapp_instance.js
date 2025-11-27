@@ -1,11 +1,18 @@
+
 const venom = require('venom-bot');
 
-let client = null;
+// Almacena múltiples clientes por sesión
+const clientes = {};
 
-function iniciarCliente() {
-  venom
+/**
+ * Inicia una sesión de WhatsApp para un número específico
+ * @param {string} sessionName Nombre de la sesión (ej: 'haby', 'cliente2')
+ * @returns {Promise}
+ */
+function iniciarCliente(sessionName = 'whatsapp-massive-sender') {
+  return venom
     .create({
-      session: 'whatsapp-massive-sender',
+      session: sessionName,
       headless: false,
       useChrome: true,
       executablePath: '/usr/bin/google-chrome-stable',
@@ -25,30 +32,54 @@ function iniciarCliente() {
       }
     })
     .then((clientInstance) => {
-      client = clientInstance;
-      console.log('[whatsapp-massive-sender]: Cliente iniciado');
+      clientes[sessionName] = clientInstance;
+      console.log(`[whatsapp-massive-sender]: Cliente iniciado para sesión ${sessionName}`);
+      return clientInstance;
     })
     .catch((erro) => {
-      console.error('[whatsapp-massive-sender]: Error al iniciar el cliente:', erro);
+      console.error(`[whatsapp-massive-sender]: Error al iniciar el cliente (${sessionName}):`, erro);
+      throw erro;
     });
 }
 
-function getCliente() {
-  if (!client) {
-    throw new Error('⚠️ Cliente de WhatsApp no está inicializado aún.');
+/**
+ * Obtiene el cliente de una sesión específica
+ * @param {string} sessionName
+ */
+function getCliente(sessionName = 'whatsapp-massive-sender') {
+  if (!clientes[sessionName]) {
+    throw new Error(`⚠️ Cliente de WhatsApp (${sessionName}) no está inicializado aún.`);
   }
-  return client;
+  return clientes[sessionName];
 }
 
-async function sendMessage(numero, mensaje) {
-  if (!client) throw new Error('Cliente de WhatsApp no está inicializado.');
-  // El número debe estar en formato internacional, ej: 54911xxxxxxx@c.us
+/**
+ * Envía un mensaje desde una sesión específica
+ */
+async function sendMessage(sessionName, numero, mensaje) {
+  const client = getCliente(sessionName);
   const destinatario = numero.includes('@c.us') ? numero : `${numero}@c.us`;
   return client.sendText(destinatario, mensaje);
+}
+
+/**
+ * Valida si una sesión está activa
+ */
+function validarSesion(sessionName = 'whatsapp-massive-sender') {
+  return !!clientes[sessionName];
+}
+
+/**
+ * Lista todas las sesiones activas
+ */
+function listarSesiones() {
+  return Object.keys(clientes);
 }
 
 module.exports = {
   iniciarCliente,
   getCliente,
-  sendMessage // <-- exporta la función aquí
+  sendMessage,
+  validarSesion,
+  listarSesiones
 };

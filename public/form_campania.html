@@ -18,6 +18,12 @@
       <input type="text" class="form-control" id="nombre" required />
     </div>
 
+
+    <div class="mb-3">
+      <label for="sessionName" class="form-label">Número / Sesión de WhatsApp</label>
+      <select class="form-select" id="sessionName" required></select>
+    </div>
+
     <div class="mb-3">
       <label for="mensaje" class="form-label">Mensaje</label>
       <textarea class="form-control" id="mensaje" rows="3" required></textarea>
@@ -53,6 +59,14 @@
   </table>
 
   <script>
+    async function cargarSesiones() {
+      // Cargar sesiones activas para el selector
+      const res = await fetch('/api/sesiones');
+      const data = await res.json();
+      const select = document.getElementById('sessionName');
+      select.innerHTML = data.map(s => `<option value="${s.session}">${s.session} (${s.activo ? 'Activo' : 'Inactivo'})</option>`).join('');
+    }
+
     async function cargarCampanias() {
       try {
         const res = await fetch('/api/campanias');
@@ -108,13 +122,14 @@
       const nombre = document.getElementById('nombre').value.trim();
       const mensaje = document.getElementById('mensaje').value.trim();
       const estado = document.getElementById('estado').value;
+      const sessionName = document.getElementById('sessionName').value;
 
-      if (!nombre || !mensaje) {
+      if (!nombre || !mensaje || !sessionName) {
         alert('Todos los campos son obligatorios.');
         return;
       }
 
-      const data = { nombre, mensaje, estado };
+      const data = { nombre, mensaje, estado, sessionName };
       const url = id ? `/api/campanias/${id}` : '/api/campanias';
       const method = id ? 'PUT' : 'POST';
 
@@ -139,9 +154,10 @@
       document.getElementById('campania-id').value = '';
     }
 
-    // Inicialización
-    document.getElementById('form-campania').addEventListener('submit', guardarCampania);
-    cargarCampanias();
+  // Inicialización
+  document.getElementById('form-campania').addEventListener('submit', guardarCampania);
+  cargarSesiones();
+  cargarCampanias();
   </script>
 </body>
   <div class="mt-4 text-center">

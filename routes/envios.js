@@ -109,7 +109,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
     const [tables] = await connection.query("SHOW TABLES LIKE 'll_%'");
     console.log('📋 Tablas encontradas:', tables);
     
-    const { campania, rubro, direccion, wapp_valido } = req.query;
+  const { campania, rubro, direccion, wapp_valido, cliente_id } = req.query;
     
     // Consulta base - excluir lugares que tengan envíos en estado 'enviado' o 'pendiente'
     let sql = `
@@ -122,6 +122,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
         COALESCE(ll_rubros.nombre_es, 'Sin rubro') AS rubro
       FROM ll_lugares
       LEFT JOIN ll_rubros ON ll_lugares.rubro_id = ll_rubros.id
+      INNER JOIN ll_lugares_clientes ON ll_lugares.id = ll_lugares_clientes.lugar_id
       WHERE ll_lugares.id NOT IN (
         SELECT DISTINCT lugar_id 
         FROM ll_envios_whatsapp 
@@ -131,6 +132,13 @@ router.get('/filtrar-prospectos', async (req, res) => {
     `;
 
     const params = [];
+
+
+    // Filtro por cliente
+    if (cliente_id) {
+      sql += ' AND ll_lugares_clientes.cliente_id = ?';
+      params.push(cliente_id);
+    }
 
     // Filtros dinámicos
     if (rubro && rubro.trim()) {
