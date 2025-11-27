@@ -28,7 +28,15 @@ client.on('ready', async () => {
   let conn;
   try {
     conn = await pool.getConnection();
-    const [lugares] = await conn.query('SELECT id, nombre, telefono_wapp FROM ll_lugares');
+    // Modo: "all" para todos, "pendientes" para solo no verificados
+    const mode = process.argv[2] === 'all' ? 'all' : 'pendientes';
+    let query;
+    if (mode === 'all') {
+      query = 'SELECT id, nombre, telefono_wapp FROM ll_lugares';
+    } else {
+      query = 'SELECT id, nombre, telefono_wapp FROM ll_lugares WHERE wapp_valido IS NULL OR wapp_valido = -1';
+    }
+    const [lugares] = await conn.query(query);
     for (let i = 0; i < lugares.length; i += BATCH_SIZE) {
       const batch = lugares.slice(i, i + BATCH_SIZE);
       console.log(`Procesando tanda ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} lugares)...`);

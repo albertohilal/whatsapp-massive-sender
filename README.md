@@ -177,15 +177,26 @@ El sistema ahora incluye filtrado avanzado que:
 
 ## 🛠️ Verificación de números válidos de WhatsApp
 
-Para verificar automáticamente si los números en la tabla `ll_lugares` son válidos en WhatsApp y actualizar el campo `wapp_valido`, ejecuta el siguiente script:
 
+Para verificar automáticamente si los números en la tabla `ll_lugares` son válidos en WhatsApp y actualizar el campo `wapp_valido`, puedes ejecutar el script en dos modos:
+
+**Solo lugares no verificados (recomendado):**
 ```bash
 node scripts/verificar_wapp_lugares.js
 ```
+Verifica únicamente los lugares donde `wapp_valido` es `NULL` o `-1` (no verificados o pendientes), acelerando el proceso.
 
-- El script recorre los registros en tandas de 50, dejando un tiempo de espera entre tandas.
-- Marca el campo `wapp_valido` como `1` si el número es válido, `0` si no lo es o está vacío/incorrecto.
-- Es independiente del servidor principal (`index.js`).
+**Verificar toda la base:**
+```bash
+node scripts/verificar_wapp_lugares.js all
+```
+Verifica todos los lugares, sin importar el estado de `wapp_valido`.
+
+Ambos modos recorren los registros en tandas de 50, dejando un tiempo de espera entre tandas. El campo `wapp_valido` se marca como `1` si el número es válido, `0` si no lo es o está vacío/incorrecto. El script es independiente del servidor principal (`index.js`).
+
+**Parámetro opcional:**
+- Sin parámetro: solo lugares no verificados.
+- Con parámetro `all`: toda la base.
 
 ---
 
