@@ -16,51 +16,64 @@ function isValidPhone(phone) {
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    headless: true,
+    headless: false, // Mostrar ventana Chrome para depuración
     executablePath: '/usr/bin/google-chrome',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   }
 });
 
+
 client.on('ready', async () => {
   console.log('WhatsApp client listo.');
-
-  const conn = await pool.getConnection();
-  const [lugares] = await conn.query('SELECT id, nombre, telefono_wapp FROM ll_lugares');
-  conn.release();
-
-  for (let i = 0; i < lugares.length; i += BATCH_SIZE) {
-    const batch = lugares.slice(i, i + BATCH_SIZE);
-    console.log(`Procesando tanda ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} lugares)...`);
-
-    for (const lugar of batch) {
-      let valido = 0;
-      const numero = lugar.telefono_wapp ? lugar.telefono_wapp.trim() : '';
-      if (isValidPhone(numero)) {
-        try {
-          const waId = numero + '@c.us';
-          valido = await client.isRegisteredUser(waId) ? 1 : 0;
-        } catch (err) {
-          console.log(`Error verificando ${numero}: ${err.message}`);
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const [lugares] = await conn.query('SELECT id, nombre, telefono_wapp FROM ll_lugares');
+    for (let i = 0; i < lugares.length; i += BATCH_SIZE) {
+      const batch = lugares.slice(i, i + BATCH_SIZE);
+      console.log(`Procesando tanda ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} lugares)...`);
+      for (const lugar of batch) {
+        let valido = 0;
+        const numero = lugar.telefono_wapp ? lugar.telefono_wapp.trim() : '';
+        if (isValidPhone(numero)) {
+          try {
+            const waId = numero + '@c.us';
+            // Timeout de 10 segundos por verificación
+            valido = await Promise.race([
+              client.isRegisteredUser(waId).then(r => r ? 1 : 0),
+              sleep(10000).then(() => { console.log(`Timeout verificando ${numero}`); return 0; })
+            ]);
+          } catch (err) {
+            console.log(`Error verificando ${numero}: ${err.message}`);
+            valido = 0;
+          }
+        } else {
           valido = 0;
         }
-      } else {
-        valido = 0;
+        await conn.query('UPDATE ll_lugares SET wapp_valido = ? WHERE id = ?', [valido, lugar.id]);
+        console.log(`${numero} (${lugar.nombre}): ${valido ? 'Válido' : 'No válido'}`);
       }
-      const conn2 = await pool.getConnection();
-      await conn2.query('UPDATE ll_lugares SET wapp_valido = ? WHERE id = ?', [valido, lugar.id]);
-      conn2.release();
-      console.log(`${numero} (${lugar.nombre}): ${valido ? 'Válido' : 'No válido'}`);
+      if (i + BATCH_SIZE < lugares.length) {
+        console.log(`Esperando ${WAIT_TIME_MS / 1000} segundos antes de la próxima tanda...`);
+        await sleep(WAIT_TIME_MS);
+      }
     }
-
-    if (i + BATCH_SIZE < lugares.length) {
-      console.log(`Esperando ${WAIT_TIME_MS / 1000} segundos antes de la próxima tanda...`);
-      await sleep(WAIT_TIME_MS);
-    }
+    console.log('Verificación terminada.');
+    process.exit(0);
+  } catch (err) {
+    console.error('Error global:', err);
+    if (conn) conn.release();
+    process.exit(1);
   }
-
-  console.log('Verificación terminada.');
-  process.exit(0);
+  if (conn) conn.release();
 });
 
+client.on('auth_failure', msg => {
+  console.error('Error de autenticación WhatsApp:', msg);
+});
+client.on('disconnected', reason => {
+  console.error('Cliente WhatsApp desconectado:', reason);
+});
+
+console.log('Inicializando cliente de WhatsApp...');
 client.initialize();
