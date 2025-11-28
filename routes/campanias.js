@@ -5,7 +5,8 @@ const connection = require('../db/connection');
 // Obtener todas las campañas
 router.get('/', async (req, res) => {
   try {
-    const clienteId = req.session?.cliente_id || req.query.cliente_id || null;
+    const sessionCliente = req.session?.tipo === 'cliente' ? req.session?.cliente_id : null;
+    const clienteId = sessionCliente || req.query.cliente_id || null;
     let sql = 'SELECT id, nombre, mensaje, estado FROM ll_campanias_whatsapp';
     const params = [];
     if (clienteId) {
@@ -41,7 +42,8 @@ router.get('/:id', async (req, res) => {
 // Crear nueva campaña
 router.post('/', async (req, res) => {
   const { nombre, mensaje, estado = 'pendiente', cliente_id } = req.body;
-  const clienteId = cliente_id || req.session?.cliente_id || null;
+  const sessionCliente = req.session?.tipo === 'cliente' ? req.session?.cliente_id : null;
+  const clienteId = sessionCliente || cliente_id || null;
 
   if (!nombre || !mensaje || !estado || !clienteId) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -71,7 +73,7 @@ router.put('/:id', async (req, res) => {
   try {
     const params = [nombre, mensaje, estado];
     let sql = 'UPDATE ll_campanias_whatsapp SET nombre = ?, mensaje = ?, estado = ?';
-    if (cliente_id) {
+    if (cliente_id && req.session?.tipo !== 'cliente') {
       sql += ', cliente_id = ?';
       params.push(cliente_id);
     }

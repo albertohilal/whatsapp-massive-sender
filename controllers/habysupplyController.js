@@ -73,17 +73,19 @@ module.exports = {
     res.sendFile('dashboard.html', { root: 'public/habysupply' });
   },
   listCampanias: async (req, res) => {
-    // Listar campañas solo de habysupply (cliente_id=51)
     const pool = require('../db/connection');
+    const clienteId = req.session?.cliente_id || 51;
     try {
       const conn = await pool.getConnection();
       const [rows] = await conn.query(`
-        SELECT DISTINCT c.id, c.nombre, c.mensaje, c.fecha_creacion, c.estado
+        SELECT c.id, c.nombre, c.mensaje, c.fecha_creacion, c.estado,
+               COUNT(e.id) AS total_envios
         FROM ll_campanias_whatsapp c
-        JOIN ll_envios_whatsapp e ON c.id = e.campania_id
-        JOIN ll_lugares_clientes lc ON e.lugar_id = lc.lugar_id
-        WHERE lc.cliente_id = 51
-      `);
+        LEFT JOIN ll_envios_whatsapp e ON c.id = e.campania_id
+        WHERE c.cliente_id = ?
+        GROUP BY c.id
+        ORDER BY c.fecha_creacion DESC
+      `, [clienteId]);
       conn.release();
       res.json(rows);
     } catch (err) {
@@ -127,9 +129,31 @@ module.exports = {
       res.status(500).json({ error: 'Error consultando prospectos', details: err.message });
     }
   },
-  listEnvios: (req, res) => {
-    // Listar envíos solo de habysupply
-    // ...consulta SQL filtrada por cliente...
-    res.json([]);
+  listEnvios: async (req, res) => {
+    const pool = require('../db/connection');
+    const campaniaId = req.query.campania_id;
+    const clienteId = req.session?.cliente_id || 51;
+
+    if (!campaniaId) {
+      return res.status(400).json({ error: 'Falta campania_id' });
+    }
+
+    try {
+      const conn = await pool.getConnection();
+      const [rows] = await conn.query(`
+        SELECT e.id, e.nombre_destino, e.telefono_wapp, e.estado, e.mensaje_final,
+               e.fecha_envio, l.direccion, COALESCE(r.nombre_es, 'Sin rubro') AS rubro
+        FROM ll_envios_whatsapp e
+        INNER JOIN ll_campanias_whatsapp c ON e.campania_id = c.id
+        LEFT JOIN ll_lugares l ON e.lugar_id = l.id
+        LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+        WHERE e.campania_id = ? AND c.cliente_id = ?
+        ORDER BY e.id DESC
+      `, [campaniaId, clienteId]);
+      conn.release();
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: 'Error consultando envíos', details: err.message });
+    }
   }
 };

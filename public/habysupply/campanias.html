@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Campañas - Habysupply</title>
+  <link rel="stylesheet" href="/habysupply/style.css">
+</head>
+<body>
+  <h1>Campañas de Habysupply</h1>
+  <p class="subtitle">Consulta las campañas creadas y los destinatarios asignados.</p>
+
+  <div class="actions">
+    <a class="btn-link" href="/habysupply/dashboard.html">Volver al panel</a>
+    <a class="btn-link" href="/form_campania.html?session=habysupply" target="_blank" rel="noopener">Crear/editar campañas</a>
+  </div>
+
+  <section class="card">
+    <h2>Listado de campañas</h2>
+    <div id="lista-campanias" class="muted">Cargando...</div>
+  </section>
+
+  <section class="card">
+    <h2>Destinatarios asociados</h2>
+    <div class="form-group">
+      <label for="selector-campania">Campaña</label>
+      <select id="selector-campania"></select>
+    </div>
+    <div id="resumen-envios" class="muted" style="margin-bottom:12px;">Selecciona una campaña para ver sus destinatarios.</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th>Rubro</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-envios">
+          <tr><td colspan="4" class="muted">Sin registros</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    let cacheCampanias = [];
+
+    async function cargarCampanias() {
+      const cont = document.getElementById('lista-campanias');
+      cont.textContent = 'Cargando campañas...';
+      try {
+        const res = await fetch('/habysupply/campanias');
+        const data = await res.json();
+        cacheCampanias = Array.isArray(data) ? data : [];
+        if (!cacheCampanias.length) {
+          cont.innerHTML = '<div class="muted">Aún no hay campañas creadas.</div>';
+        } else {
+          cont.innerHTML = '<div class="list-grid">' + cacheCampanias.map(c => `
+            <div class="campaign-card">
+              <div style="font-weight:600;font-size:1.05rem;">${c.nombre}</div>
+              <div style="margin:10px 0;color:#4a5568;">${c.mensaje}</div>
+              <div class="estado">Estado: <span style="color:${c.estado==='pendiente' ? '#f59e0b' : c.estado==='aprobada' ? '#0b74de' : '#1f9254'}">${c.estado || 'pendiente'}</span></div>
+              <div class="muted" style="margin-top:8px;">Destinatarios: ${c.total_envios || 0}</div>
+            </div>
+          `).join('') + '</div>';
+        }
+        actualizarSelector();
+      } catch (err) {
+        cont.innerHTML = '<div class="error-message">No se pudieron cargar las campañas.</div>';
+        actualizarSelector();
+      }
+    }
+
+    function actualizarSelector() {
+      const select = document.getElementById('selector-campania');
+      if (!select) return;
+      if (!cacheCampanias.length) {
+        select.innerHTML = '<option value="">Sin campañas</option>';
+        renderEnvios([]);
+        return;
+      }
+      select.innerHTML = cacheCampanias.map(c => `<option value="${c.id}">${c.nombre} (${c.total_envios || 0})</option>`).join('');
+      cargarEnvios(select.value);
+    }
+
+    async function cargarEnvios(campaniaId) {
+      const resumen = document.getElementById('resumen-envios');
+      if (!campaniaId) {
+        resumen.textContent = 'Selecciona una campaña para ver sus destinatarios.';
+        renderEnvios([]);
+        return;
+      }
+      resumen.textContent = 'Cargando destinatarios...';
+      try {
+        const res = await fetch(`/habysupply/envios?campania_id=${campaniaId}`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          resumen.textContent = data.length
+            ? `${data.length} destinatario(s) configurados.`
+            : 'Esta campaña todavía no tiene destinatarios.';
+          renderEnvios(data);
+        } else {
+          throw new Error('Respuesta no válida');
+        }
+      } catch (err) {
+        resumen.textContent = 'Error al obtener los destinatarios.';
+        renderEnvios([]);
+      }
+    }
+
+    function renderEnvios(envios) {
+      const tbody = document.getElementById('tabla-envios');
+      if (!tbody) return;
+      if (!envios || !envios.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="muted">Sin registros.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = envios.map(e => `
+        <tr>
+          <td>${e.nombre_destino || 'Sin nombre'}</td>
+          <td>${e.telefono_wapp || '-'}</td>
+          <td>${e.estado || '-'}</td>
+          <td>${e.rubro || 'Sin rubro'}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarCampanias();
+      const select = document.getElementById('selector-campania');
+      if (select) {
+        select.addEventListener('change', e => cargarEnvios(e.target.value));
+      }
+    });
+  </script>
+</body>
+</html>
