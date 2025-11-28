@@ -13,6 +13,8 @@ if (typeof iniciarCliente === 'function') {
 // Middlewares
 app.use(cors());
 app.use(express.json());
+const habysupplyRouter = require('./routes/habysupply');
+const adminRouter = require('./routes/admin');
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware de logging para debug
@@ -24,6 +26,8 @@ app.use((req, res, next) => {
 // Rutas
 
 const campaniasRoutes = require('./routes/campanias');
+app.use('/habysupply', habysupplyRouter);
+app.use('/admin', adminRouter);
 const enviosRoutes = require('./routes/envios');
 const generarEnviosRoutes = require('./routes/generar_envios');
 const lugaresRoutes = require('./routes/lugares');

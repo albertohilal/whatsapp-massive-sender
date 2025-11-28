@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Habysupply</title>
+  <link rel="stylesheet" href="/habysupply/style.css">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Habysupply</title>
+  <link rel="stylesheet" href="/public/habysupply/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Panel Habysupply</h1>
+    <p>Bienvenido al panel independiente para gestión de campañas y prospectos.</p>
+  </div>
+  <div class="container">
+    <nav class="nav">
+      <a href="/habysupply/campanias">Campañas</a>
+      <a href="/habysupply/prospectos">Prospectos</a>
+      <a href="/habysupply/envios">Envios</a>
+    </nav>
+    <section class="form-section">
+  <h2>Crear nueva campaña</h2>
+  <div id="campanias-list" style="margin-top:32px;"></div>
+      <form id="form-campania">
+        <div class="form-group">
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="mensaje">Mensaje:</label>
+          <textarea id="mensaje" name="mensaje" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="button">Crear campaña</button>
+      </form>
+      <div id="campania-msg"></div>
+    </section>
+  </div>
+  <script>
+    async function cargarCampanias() {
+      const cont = document.getElementById('campanias-list');
+      cont.innerHTML = '<div>Cargando campañas...</div>';
+      try {
+        const res = await fetch('/habysupply/campanias');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length) {
+          cont.innerHTML = '<h3>Mis campañas</h3>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:18px;">' +
+            data.map(c => `
+              <div style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:18px 22px;min-width:220px;max-width:320px;">
+                <div style="font-weight:500;font-size:1.1rem;">${c.nombre}</div>
+                <div style="margin:8px 0 12px 0;color:#555;">${c.mensaje}</div>
+                <div style="font-size:0.95rem;"><b>Estado:</b> <span style="color:${c.estado==='pendiente'?'#dc3232':c.estado==='aprobada'?'#0073aa':'#46b450'}">${c.estado}</span></div>
+              </div>
+            `).join('') + '</div>';
+        } else {
+          cont.innerHTML = '<div>No hay campañas creadas.</div>';
+        }
+      } catch (err) {
+        cont.innerHTML = '<div class="error-message">Error cargando campañas.</div>';
+      }
+    }
+
+    document.getElementById('form-campania').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre').value.trim();
+      const mensaje = document.getElementById('mensaje').value.trim();
+      const msgDiv = document.getElementById('campania-msg');
+      msgDiv.textContent = '';
+      msgDiv.className = '';
+      if (!nombre || !mensaje) {
+        msgDiv.textContent = 'Completa todos los campos.';
+        msgDiv.className = 'error-message';
+        return;
+      }
+      try {
+        const res = await fetch('/habysupply/campanias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, mensaje })
+        });
+        const data = await res.json();
+        if (res.ok && (data.success || data.ok)) {
+          msgDiv.textContent = 'Campaña creada correctamente.';
+          msgDiv.className = 'success-message';
+          document.getElementById('form-campania').reset();
+          cargarCampanias();
+        } else {
+          msgDiv.textContent = data.error || 'Error al crear campaña.';
+          msgDiv.className = 'error-message';
+        }
+      } catch (err) {
+        msgDiv.textContent = 'Error de red o servidor.';
+        msgDiv.className = 'error-message';
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', cargarCampanias);
+  </script>
+</body>
+  </div>
+  <script>
+    document.getElementById('form-campania').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const nombre = this.nombre.value;
+      const mensaje = this.mensaje.value;
+      const res = await fetch('/habysupply/campanias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, mensaje })
+      });
+      const data = await res.json();
+      document.getElementById('campania-resultado').textContent = data.ok ? 'Campaña creada con ID: ' + data.id : 'Error: ' + (data.error || data.details);
+    });
+  </script>
+</body>
+</html>
