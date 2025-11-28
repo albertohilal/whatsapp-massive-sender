@@ -1,0 +1,21 @@
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+
+router.post('/login', authController.login);
+
+// Endpoint para iniciar WhatsApp bajo demanda
+const { iniciarCliente } = require('../bot/whatsapp_instance');
+router.post('/iniciar-whatsapp', (req, res) => {
+	try {
+		if (typeof iniciarCliente === 'function') {
+			iniciarCliente();
+			return res.json({ ok: true, message: 'WhatsApp iniciado correctamente.' });
+		}
+		res.status(500).json({ ok: false, error: 'No se pudo iniciar el cliente WhatsApp.' });
+	} catch (err) {
+		res.status(500).json({ ok: false, error: err.message });
+	}
+});
+
+module.exports = router;
