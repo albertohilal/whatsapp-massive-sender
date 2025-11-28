@@ -3,7 +3,24 @@ const express = require('express');
 const router = express.Router();
 const habysupplyController = require('../controllers/habysupplyController');
 
-// Login
+const ensureCliente = (req, res, next) => {
+  if (req.session && req.session.tipo === 'cliente') {
+    return next();
+  }
+  if (req.accepts('html')) {
+    return res.redirect('/');
+  }
+  return res.status(403).json({ ok: false, error: 'No autorizado' });
+};
+
+router.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/login') {
+    return next();
+  }
+  return ensureCliente(req, res, next);
+});
+
+// Login opcional para panel independiente
 router.post('/login', habysupplyController.login);
 // Dashboard
 router.get('/dashboard', habysupplyController.dashboard);

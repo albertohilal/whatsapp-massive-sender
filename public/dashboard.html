@@ -31,8 +31,12 @@
   </script>
   <style>
     body { font-family: sans-serif; margin: 20px; }
-    button, a { margin: 5px; padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; text-decoration: none; }
-    button:hover, a:hover { background-color: #0056b3; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    button, a { padding: 10px 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; text-decoration: none; transition: background-color .15s ease, transform .15s ease; }
+    button:hover, a:hover { background-color: #0056b3; transform: translateY(-1px); }
+    .session-actions { display:flex; gap:8px; align-items:center; margin-top:15px; }
+    .session-actions input { flex:1; padding:8px 10px; border:1px solid #ccc; border-radius:6px; }
+    .session-actions button { flex:0 0 auto; }
     table { margin-top: 20px; width: 100%; border-collapse: collapse; }
     td, th { padding: 8px; border: 1px solid #ccc; }
   </style>
@@ -40,13 +44,13 @@
 <body>
   <h1>WhatsApp Massive Sender</h1>
 
-  <div>
+  <div class="actions">
     <button onclick="ejecutarAccion('start')">Iniciar servidor</button>
     <button onclick="ejecutarAccion('stop')">Detener servidor</button>
     <button onclick="ejecutarAccion('restart')">Reiniciar servidor</button>
   </div>
 
-  <div>
+  <div class="actions">
     <a href="/form_campania.html">Enviar campaña</a>
     <a href="/form_envios_pendientes.html">Enviar pendientes</a>
     <a href="/form_envios.html">Formulario masivo</a>
@@ -55,7 +59,7 @@
 
 
   <h2>Gestión de números de WhatsApp</h2>
-  <div>
+  <div class="session-actions">
     <input type="text" id="nuevoSessionName" placeholder="Nombre de sesión (ej: haby)" />
     <button onclick="iniciarSesion()">Iniciar nueva sesión</button>
   </div>

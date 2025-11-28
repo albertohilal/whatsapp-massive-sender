@@ -60,8 +60,8 @@ app.use('/api/sesiones', requireAuth, sesionesRoutes);
 app.use('/habysupply', habysupplyRouter);
 app.use('/admin', requireAuth, adminRouter);
 
-// Servir archivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
+// Servir archivos estáticos sin sobrescribir la ruta principal
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // Ruta principal (HTML base) al final
 app.get('/', (req, res) => {
