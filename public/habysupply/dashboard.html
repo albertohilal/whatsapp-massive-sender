@@ -7,7 +7,20 @@
 </head>
 <body>
   <h1>Habysupply</h1>
-  <p class="subtitle">Gestiona tus campañas y prospectos. El equipo administrador se encarga de ejecutar los envíos.</p>
+  <p class="subtitle">Sigue estos pasos para dejar tus campañas listas y permitir que el administrador realice los envíos.</p>
+
+  <section class="card" style="margin-bottom:24px;">
+    <h2>Indicaciones para el cliente</h2>
+    <ol>
+      <li><strong>Crea o edita campañas</strong> usando el botón “Formulario de campañas”. Solo las campañas en estado pendiente se pueden modificar.</li>
+      <li><strong>Agrega prospectos</strong> desde “Seleccionar prospectos”. Usa los filtros y agrega los contactos a la campaña correcta.</li>
+      <li><strong>Verifica la información</strong> en “Ver campañas”. Revisa que cada campaña tenga los destinatarios esperados.</li>
+      <li><strong>Inicia la sesión de WhatsApp</strong> desde esta pantalla. Pulsa “Iniciar sesión WhatsApp”, escanea el QR y espera a ver el estado “conectado”. Una vez que el servidor confirma la conexión, la sesión queda activa aunque cierres la ventana o tu computadora; el administrador podrá enviar la campaña más tarde.</li>
+      <li><strong>No cierres la sesión desde el botón rojo</strong> hasta que el administrador confirme que ya envió todo. Ese botón limpia el QR y desconecta el número.</li>
+      <li><strong>Coordina con el administrador</strong> cuando hayas completado los pasos anteriores. Él ejecutará los envíos utilizando la sesión que dejaste activa.</li>
+    </ol>
+    <p class="muted">Si necesitas reiniciar la sesión o limpiar el QR (por ejemplo, para vincular otro número), usa el botón “Cerrar sesión” y vuelve a iniciar.</p>
+  </section>
 
   <div class="actions">
     <button id="wapp-session-init">Iniciar sesión WhatsApp</button>
@@ -25,171 +38,16 @@
     <div id="wapp-session-status" class="status-line">Consultando estado...</div>
   </section>
 
-  <section class="card" id="campania-section">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
-      <div>
-        <h2>Campañas registradas</h2>
-        <p class="muted">Puedes crear nuevas campañas o editar la información desde el formulario general.</p>
-      </div>
-      <a class="btn-link btn-secondary" href="/form_envios.html" target="_blank" rel="noopener">Abrir formulario masivo</a>
-    </div>
-    <div id="campanias-list" style="margin-top:24px;"></div>
-    <hr style="border:none;border-top:1px solid #f0f2f5;margin:28px 0 18px 0;">
-    <h3 style="margin-top:0;">Crear nueva campaña</h3>
-    <form id="form-campania">
-      <div class="form-group">
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" name="nombre" required>
-      </div>
-      <div class="form-group">
-        <label for="mensaje">Mensaje</label>
-        <textarea id="mensaje" name="mensaje" rows="3" required></textarea>
-      </div>
-      <button type="submit">Guardar campaña</button>
-      <div id="campania-msg"></div>
-    </form>
-  </section>
-
-  <section class="card">
-    <h2>Destinatarios cargados</h2>
-    <p class="muted">Selecciona una campaña para revisar los contactos asociados antes del envío.</p>
-    <div class="form-group">
-      <label for="campania-detalle">Campaña</label>
-      <select id="campania-detalle"></select>
-    </div>
-    <div id="envios-resumen" class="muted" style="margin-bottom:12px;">Selecciona una campaña para ver sus destinatarios.</div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Teléfono</th>
-            <th>Estado</th>
-            <th>Rubro</th>
-          </tr>
-        </thead>
-        <tbody id="envios-body">
-          <tr><td colspan="4" class="muted">Sin datos.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
   <script>
-    let campaniasCache = [];
     async function cargarCampanias() {
-      const cont = document.getElementById('campanias-list');
-      cont.innerHTML = '<div class="muted">Cargando campañas...</div>';
+      // Solo valida estado para permitir acceso al resto de acciones
       try {
         const res = await fetch('/habysupply/campanias');
-        const data = await res.json();
-        campaniasCache = Array.isArray(data) ? data : [];
-        if (Array.isArray(data) && data.length) {
-          cont.innerHTML = '<div class="list-grid">' +
-            data.map(c => `
-              <div class="campaign-card">
-                <div style="font-weight:600;font-size:1.05rem;">${c.nombre}</div>
-                <div style="margin:10px 0;color:#4a5568;">${c.mensaje}</div>
-                <div class="estado">Estado: <span style="color:${c.estado==='pendiente' ? '#f59e0b' : c.estado==='aprobada' ? '#0b74de' : '#1f9254'}">${c.estado || 'pendiente'}</span></div>
-                <div class="muted" style="margin-top:8px;">Destinatarios: ${c.total_envios || 0}</div>
-              </div>
-            `).join('') + '</div>';
-        } else {
-          cont.innerHTML = '<div class="muted">No hay campañas registradas todavía.</div>';
-        }
-        actualizarSelectorCampanias();
+        await res.json();
       } catch (err) {
-        cont.innerHTML = '<div class="error-message">Error cargando campañas.</div>';
-        actualizarSelectorCampanias();
+        // No necesitamos mostrar aquí las campañas ni destinatarios
       }
     }
-    function actualizarSelectorCampanias() {
-      const select = document.getElementById('campania-detalle');
-      if (!select) return;
-      if (!campaniasCache.length) {
-        select.innerHTML = '<option value="">Sin campañas</option>';
-        renderEnvios([]);
-        return;
-      }
-      select.innerHTML = campaniasCache.map(c => `<option value="${c.id}">${c.nombre} (${c.total_envios || 0})</option>`).join('');
-      cargarEnviosCampania(select.value);
-    }
-
-    async function cargarEnviosCampania(campaniaId) {
-      const resumen = document.getElementById('envios-resumen');
-      if (!campaniaId) {
-        resumen.textContent = 'Selecciona una campaña para ver sus destinatarios.';
-        renderEnvios([]);
-        return;
-      }
-      resumen.textContent = 'Cargando destinatarios...';
-      try {
-        const res = await fetch(`/habysupply/envios?campania_id=${campaniaId}`);
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          resumen.textContent = data.length
-            ? `${data.length} destinatario(s) configurados para esta campaña.`
-            : 'La campaña aún no tiene destinatarios asociados.';
-          renderEnvios(data);
-        } else {
-          throw new Error('Respuesta no válida');
-        }
-      } catch (err) {
-        resumen.textContent = 'Error mostrando destinatarios.';
-        renderEnvios([]);
-      }
-    }
-
-    function renderEnvios(lista) {
-      const tbody = document.getElementById('envios-body');
-      if (!tbody) return;
-      if (!lista || !lista.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="muted">Sin registros.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = lista.map(item => `
-        <tr>
-          <td>${item.nombre_destino || 'Sin nombre'}</td>
-          <td>${item.telefono_wapp || '-'}</td>
-          <td>${item.estado || '-'}</td>
-          <td>${item.rubro || 'Sin rubro'}</td>
-        </tr>
-      `).join('');
-    }
-
-    document.getElementById('form-campania').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const nombre = document.getElementById('nombre').value.trim();
-      const mensaje = document.getElementById('mensaje').value.trim();
-      const msgDiv = document.getElementById('campania-msg');
-      msgDiv.textContent = '';
-      msgDiv.className = '';
-      if (!nombre || !mensaje) {
-        msgDiv.textContent = 'Completa todos los campos.';
-        msgDiv.className = 'error-message';
-        return;
-      }
-      try {
-        const res = await fetch('/habysupply/campanias', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, mensaje })
-        });
-        const data = await res.json();
-        if (res.ok && (data.success || data.ok)) {
-          msgDiv.textContent = 'Campaña creada correctamente.';
-          msgDiv.className = 'success-message';
-          document.getElementById('form-campania').reset();
-          cargarCampanias();
-        } else {
-          msgDiv.textContent = data.error || 'Error al crear campaña.';
-          msgDiv.className = 'error-message';
-        }
-      } catch (err) {
-        msgDiv.textContent = 'Error de red o servidor.';
-        msgDiv.className = 'error-message';
-      }
-    });
 
     async function cargarEstadoSesion() {
       const statusDiv = document.getElementById('wapp-session-status');
@@ -206,7 +64,7 @@
           document.getElementById('campania-section').style.display = 'none';
         }
       } catch (err) {
-        statusDiv.innerHTML = '<span class="status-off">Error consultando estado</span>';
+        statusDiv.innerHTML = '<span class="status-off">Estado no disponible. Reintenta más tarde.</span>';
         document.getElementById('campania-section').style.display = 'none';
       }
     }
@@ -240,10 +98,6 @@
     window.addEventListener('DOMContentLoaded', () => {
       cargarCampanias();
       cargarEstadoSesion();
-      const select = document.getElementById('campania-detalle');
-      if (select) {
-        select.addEventListener('change', e => cargarEnviosCampania(e.target.value));
-      }
     });
   </script>
 </body>

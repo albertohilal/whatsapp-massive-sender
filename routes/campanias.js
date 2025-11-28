@@ -65,12 +65,28 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, mensaje, estado, cliente_id } = req.body;
+  const sessionCliente = req.session?.tipo === 'cliente' ? req.session?.cliente_id : null;
 
   if (!nombre || !mensaje || !estado) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
   }
 
   try {
+    const [rows] = await connection.query(
+      'SELECT estado, cliente_id FROM ll_campanias_whatsapp WHERE id = ?',
+      [id]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Campaña no encontrada' });
+    }
+    const campaign = rows[0];
+    if (sessionCliente && campaign.cliente_id !== sessionCliente) {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    if (campaign.estado !== 'pendiente') {
+      return res.status(400).json({ error: 'Solo se pueden editar campañas pendientes' });
+    }
+
     const params = [nombre, mensaje, estado];
     let sql = 'UPDATE ll_campanias_whatsapp SET nombre = ?, mensaje = ?, estado = ?';
     if (cliente_id && req.session?.tipo !== 'cliente') {
@@ -90,8 +106,24 @@ router.put('/:id', async (req, res) => {
 // Eliminar campaña
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
+  const sessionCliente = req.session?.tipo === 'cliente' ? req.session?.cliente_id : null;
 
   try {
+    const [rows] = await connection.query(
+      'SELECT estado, cliente_id FROM ll_campanias_whatsapp WHERE id = ?',
+      [id]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Campaña no encontrada' });
+    }
+    const campaign = rows[0];
+    if (sessionCliente && campaign.cliente_id !== sessionCliente) {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    if (campaign.estado !== 'pendiente') {
+      return res.status(400).json({ error: 'Solo se pueden eliminar campañas pendientes' });
+    }
+
     await connection.query(
       'DELETE FROM ll_campanias_whatsapp WHERE id = ?',
       [id]

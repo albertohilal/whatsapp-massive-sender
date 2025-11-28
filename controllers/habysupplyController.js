@@ -1,33 +1,43 @@
 // Controlador para panel habysupply
 // --- Instancia WhatsApp por cliente ---
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const fs = require('fs');
+const path = require('path');
 const clientesWapp = {};
 
-function getWappClient(cliente) {
-  if (!clientesWapp[cliente]) {
-    clientesWapp[cliente] = {
-      client: new Client({
-        authStrategy: new LocalAuth({ dataPath: `tokens/${cliente}` }),
-        puppeteer: {
-          headless: false, // Mostrar ventana Chrome para escanear QR
-          executablePath: '/usr/bin/google-chrome',
-          args: ['--no-sandbox', '--disable-setuid-sandbox']
-        }
-      }),
-      status: 'desconectado',
-      initialized: false
-    };
-    clientesWapp[cliente].client.on('ready', () => {
-      clientesWapp[cliente].status = 'conectado';
-    });
-    clientesWapp[cliente].client.on('disconnected', () => {
-      clientesWapp[cliente].status = 'desconectado';
-    });
-    clientesWapp[cliente].client.on('auth_failure', () => {
-      clientesWapp[cliente].status = 'error';
-    });
-  }
+function createWappClient(cliente) {
+  const clientWrapper = {
+    client: new Client({
+      authStrategy: new LocalAuth({ dataPath: `tokens/${cliente}` }),
+      puppeteer: {
+        headless: false,
+        executablePath: '/usr/bin/google-chrome',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      }
+    }),
+    status: 'desconectado',
+    initialized: false
+  };
+  clientWrapper.client.on('ready', () => {
+    clientWrapper.status = 'conectado';
+  });
+  clientWrapper.client.on('disconnected', () => {
+    clientWrapper.status = 'desconectado';
+  });
+  clientWrapper.client.on('auth_failure', () => {
+    clientWrapper.status = 'error';
+  });
+  clientesWapp[cliente] = clientWrapper;
   return clientesWapp[cliente];
+}
+
+function getWappClient(cliente) {
+  return clientesWapp[cliente] || null;
+}
+
+function deleteSessionData(cliente) {
+  const dir = path.join(__dirname, '..', 'tokens', cliente);
+  fs.rm(dir, { recursive: true, force: true }, () => {});
 }
 
 module.exports = {
@@ -35,11 +45,17 @@ module.exports = {
   wappSessionStatus: (req, res) => {
     const cliente = req.session?.cliente || 'habysupply';
     const inst = getWappClient(cliente);
+    if (!inst) {
+      return res.json({ status: 'desconectado' });
+    }
     res.json({ status: inst.status });
   },
   wappSessionInit: (req, res) => {
     const cliente = req.session?.cliente || 'habysupply';
-    const inst = getWappClient(cliente);
+    let inst = getWappClient(cliente);
+    if (!inst) {
+      inst = createWappClient(cliente);
+    }
     if (!inst.initialized) {
       inst.client.initialize();
       inst.initialized = true;
@@ -53,8 +69,8 @@ module.exports = {
     const inst = getWappClient(cliente);
     if (inst.initialized) {
       inst.client.destroy();
-      inst.initialized = false;
-      inst.status = 'desconectado';
+      delete clientesWapp[cliente];
+      deleteSessionData(cliente);
       return res.json({ success: true, message: 'Sesión cerrada.' });
     }
     res.json({ success: false, message: 'No hay sesión activa.' });
