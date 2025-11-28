@@ -4,26 +4,30 @@
   <meta charset="UTF-8">
   <title>Panel Habysupply</title>
   <link rel="stylesheet" href="/habysupply/style.css">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Habysupply</title>
-  <link rel="stylesheet" href="/public/habysupply/style.css">
 </head>
 <body>
   <div class="header">
     <h1>Panel Habysupply</h1>
     <p>Bienvenido al panel independiente para gestión de campañas y prospectos.</p>
   </div>
+
   <div class="container">
     <nav class="nav">
       <a href="/habysupply/campanias">Campañas</a>
       <a href="/habysupply/prospectos">Prospectos</a>
       <a href="/habysupply/envios">Envios</a>
     </nav>
-    <section class="form-section">
-  <h2>Crear nueva campaña</h2>
-  <div id="campanias-list" style="margin-top:32px;"></div>
+
+    <section class="form-section" style="margin-bottom:32px;">
+      <h2>Gestión de sesión WhatsApp</h2>
+      <div id="wapp-session-status" style="margin-bottom:12px;"></div>
+      <button id="wapp-session-init" class="button">Iniciar sesión</button>
+      <button id="wapp-session-close" class="button" style="background:#dc3232;margin-left:10px;">Cerrar sesión</button>
+    </section>
+
+    <section class="form-section" id="campania-section" style="display:none;">
+      <h2>Crear nueva campaña</h2>
+      <div id="campanias-list" style="margin-top:32px;"></div>
       <form id="form-campania">
         <div class="form-group">
           <label for="nombre">Nombre:</label>
@@ -37,6 +41,7 @@
       </form>
       <div id="campania-msg"></div>
     </section>
+    <!-- Sección duplicada eliminada: solo se muestra el formulario controlado por sesión -->
   </div>
   <script>
     async function cargarCampanias() {
@@ -97,7 +102,59 @@
       }
     });
 
-    window.addEventListener('DOMContentLoaded', cargarCampanias);
+    // --- Gestión de sesión WhatsApp ---
+    async function cargarEstadoSesion() {
+      const statusDiv = document.getElementById('wapp-session-status');
+      statusDiv.textContent = 'Consultando estado...';
+      try {
+        const res = await fetch('/habysupply/wapp-session');
+        const data = await res.json();
+        if (data && data.status) {
+          statusDiv.innerHTML = `<b>Estado:</b> <span style="color:${data.status==='conectado'?'#46b450':'#dc3232'}">${data.status}</span>`;
+          const campaniaSection = document.getElementById('campania-section');
+          if (data.status === 'conectado') {
+            campaniaSection.style.display = '';
+          } else {
+            campaniaSection.style.display = 'none';
+          }
+        } else {
+          statusDiv.innerHTML = '<span style="color:#dc3232">No conectado</span>';
+          campaniaSection.style.display = 'none';
+        }
+      } catch {
+        statusDiv.innerHTML = '<span style="color:#dc3232">Error consultando estado</span>';
+        campaniaSection.style.display = 'none';
+      }
+    }
+
+    document.getElementById('wapp-session-init').onclick = async function() {
+      this.disabled = true;
+      try {
+        const res = await fetch('/habysupply/wapp-session/init', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Sesión iniciada.' : 'Error iniciando sesión.'));
+        cargarEstadoSesion();
+      } catch {
+        alert('Error iniciando sesión.');
+      }
+      this.disabled = false;
+    };
+    document.getElementById('wapp-session-close').onclick = async function() {
+      this.disabled = true;
+      try {
+        const res = await fetch('/habysupply/wapp-session/close', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Sesión cerrada.' : 'Error cerrando sesión.'));
+        cargarEstadoSesion();
+      } catch {
+        alert('Error cerrando sesión.');
+      }
+      this.disabled = false;
+    };
+    window.addEventListener('DOMContentLoaded', () => {
+      cargarCampanias();
+      cargarEstadoSesion();
+    });
   </script>
 </body>
   </div>

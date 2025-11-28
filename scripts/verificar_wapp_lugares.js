@@ -1,3 +1,18 @@
+/**
+ * Script de verificación de números WhatsApp
+ *
+ * Uso:
+ *   node scripts/verificar_wapp_lugares.js [all|pendientes] [cliente]
+ *
+ * Parámetros:
+ *   - all: verifica todos los lugares
+ *   - pendientes: solo los no verificados (default)
+ *   - cliente: nombre del cliente para usar sesión/carpeta específica (default: 'default')
+ *
+ * Ejemplo:
+ *   node scripts/verificar_wapp_lugares.js pendientes habysupply
+ *   node scripts/verificar_wapp_lugares.js all otrocliente
+ */
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const pool = require('../db/connection');
 
@@ -13,8 +28,13 @@ function isValidPhone(phone) {
   return typeof phone === 'string' && /^549\d{10}$/.test(phone);
 }
 
+
+// Permitir pasar el nombre del cliente como parámetro
+const cliente = process.argv[3] || 'default';
 const client = new Client({
-  authStrategy: new LocalAuth(),
+  authStrategy: new LocalAuth({
+    dataPath: `tokens/${cliente}`
+  }),
   puppeteer: {
     headless: false, // Mostrar ventana Chrome para depuración
     executablePath: '/usr/bin/google-chrome',

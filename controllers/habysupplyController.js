@@ -1,5 +1,64 @@
 // Controlador para panel habysupply
+// --- Instancia WhatsApp por cliente ---
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const clientesWapp = {};
+
+function getWappClient(cliente) {
+  if (!clientesWapp[cliente]) {
+    clientesWapp[cliente] = {
+      client: new Client({
+        authStrategy: new LocalAuth({ dataPath: `tokens/${cliente}` }),
+        puppeteer: {
+          headless: false, // Mostrar ventana Chrome para escanear QR
+          executablePath: '/usr/bin/google-chrome',
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        }
+      }),
+      status: 'desconectado',
+      initialized: false
+    };
+    clientesWapp[cliente].client.on('ready', () => {
+      clientesWapp[cliente].status = 'conectado';
+    });
+    clientesWapp[cliente].client.on('disconnected', () => {
+      clientesWapp[cliente].status = 'desconectado';
+    });
+    clientesWapp[cliente].client.on('auth_failure', () => {
+      clientesWapp[cliente].status = 'error';
+    });
+  }
+  return clientesWapp[cliente];
+}
+
 module.exports = {
+  // --- Gestión de sesión WhatsApp ---
+  wappSessionStatus: (req, res) => {
+    const cliente = req.session?.cliente || 'habysupply';
+    const inst = getWappClient(cliente);
+    res.json({ status: inst.status });
+  },
+  wappSessionInit: (req, res) => {
+    const cliente = req.session?.cliente || 'habysupply';
+    const inst = getWappClient(cliente);
+    if (!inst.initialized) {
+      inst.client.initialize();
+      inst.initialized = true;
+      inst.status = 'iniciando';
+      return res.json({ success: true, message: 'Inicializando sesión WhatsApp...' });
+    }
+    res.json({ success: false, message: 'Sesión ya iniciada o en proceso.' });
+  },
+  wappSessionClose: (req, res) => {
+    const cliente = req.session?.cliente || 'habysupply';
+    const inst = getWappClient(cliente);
+    if (inst.initialized) {
+      inst.client.destroy();
+      inst.initialized = false;
+      inst.status = 'desconectado';
+      return res.json({ success: true, message: 'Sesión cerrada.' });
+    }
+    res.json({ success: false, message: 'No hay sesión activa.' });
+  },
   login: (req, res) => {
     // Autenticación básica (ejemplo)
     const { usuario, password } = req.body;
