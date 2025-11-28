@@ -2,66 +2,71 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Habysupply</title>
+  <title>Habysupply - WhatsApp Massive Sender</title>
   <link rel="stylesheet" href="/habysupply/style.css">
 </head>
 <body>
-  <div class="header">
-    <h1>Panel Habysupply</h1>
-    <p>Bienvenido al panel independiente para gestión de campañas y prospectos.</p>
+  <h1>Habysupply</h1>
+  <p class="subtitle">Gestiona tus campañas y prospectos. El equipo administrador se encarga de ejecutar los envíos.</p>
+
+  <div class="actions">
+    <button id="wapp-session-init">Iniciar sesión WhatsApp</button>
+    <button id="wapp-session-close" class="btn-danger">Cerrar sesión</button>
+  </div>
+  <div class="actions">
+    <a class="btn-link" href="/form_campania.html" target="_blank" rel="noopener">Formulario de campañas</a>
+    <a class="btn-link" href="/form_envios.html" target="_blank" rel="noopener">Seleccionar prospectos</a>
   </div>
 
-  <div class="container">
-    <nav class="nav">
-      <a href="/habysupply/campanias">Campañas</a>
-      <a href="/habysupply/prospectos">Prospectos</a>
-      <a href="/habysupply/envios">Envios</a>
-    </nav>
+  <section class="card">
+    <h2>Estado de la sesión</h2>
+    <p class="muted">Mantén la sesión activa solo al preparar campañas. Si necesitas reiniciar el QR, usa el botón “Cerrar sesión”.</p>
+    <div id="wapp-session-status" class="status-line">Consultando estado...</div>
+  </section>
 
-    <section class="form-section" style="margin-bottom:32px;">
-      <h2>Gestión de sesión WhatsApp</h2>
-      <div id="wapp-session-status" style="margin-bottom:12px;"></div>
-      <button id="wapp-session-init" class="button">Iniciar sesión</button>
-      <button id="wapp-session-close" class="button" style="background:#dc3232;margin-left:10px;">Cerrar sesión</button>
-    </section>
-
-    <section class="form-section" id="campania-section" style="display:none;">
-      <h2>Crear nueva campaña</h2>
-      <div id="campanias-list" style="margin-top:32px;"></div>
-      <form id="form-campania">
-        <div class="form-group">
-          <label for="nombre">Nombre:</label>
-          <input type="text" id="nombre" name="nombre" required>
-        </div>
-        <div class="form-group">
-          <label for="mensaje">Mensaje:</label>
-          <textarea id="mensaje" name="mensaje" rows="3" required></textarea>
-        </div>
-        <button type="submit" class="button">Crear campaña</button>
-      </form>
+  <section class="card" id="campania-section">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <div>
+        <h2>Campañas registradas</h2>
+        <p class="muted">Puedes crear nuevas campañas o editar la información desde el formulario general.</p>
+      </div>
+      <a class="btn-link btn-secondary" href="/form_envios.html" target="_blank" rel="noopener">Abrir formulario masivo</a>
+    </div>
+    <div id="campanias-list" style="margin-top:24px;"></div>
+    <hr style="border:none;border-top:1px solid #f0f2f5;margin:28px 0 18px 0;">
+    <h3 style="margin-top:0;">Crear nueva campaña</h3>
+    <form id="form-campania">
+      <div class="form-group">
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" required>
+      </div>
+      <div class="form-group">
+        <label for="mensaje">Mensaje</label>
+        <textarea id="mensaje" name="mensaje" rows="3" required></textarea>
+      </div>
+      <button type="submit">Guardar campaña</button>
       <div id="campania-msg"></div>
-    </section>
-    <!-- Sección duplicada eliminada: solo se muestra el formulario controlado por sesión -->
-  </div>
+    </form>
+  </section>
+
   <script>
     async function cargarCampanias() {
       const cont = document.getElementById('campanias-list');
-      cont.innerHTML = '<div>Cargando campañas...</div>';
+      cont.innerHTML = '<div class="muted">Cargando campañas...</div>';
       try {
         const res = await fetch('/habysupply/campanias');
         const data = await res.json();
         if (Array.isArray(data) && data.length) {
-          cont.innerHTML = '<h3>Mis campañas</h3>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:18px;">' +
+          cont.innerHTML = '<div class="list-grid">' +
             data.map(c => `
-              <div style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:18px 22px;min-width:220px;max-width:320px;">
-                <div style="font-weight:500;font-size:1.1rem;">${c.nombre}</div>
-                <div style="margin:8px 0 12px 0;color:#555;">${c.mensaje}</div>
-                <div style="font-size:0.95rem;"><b>Estado:</b> <span style="color:${c.estado==='pendiente'?'#dc3232':c.estado==='aprobada'?'#0073aa':'#46b450'}">${c.estado}</span></div>
+              <div class="campaign-card">
+                <div style="font-weight:600;font-size:1.05rem;">${c.nombre}</div>
+                <div style="margin:10px 0;color:#4a5568;">${c.mensaje}</div>
+                <div class="estado">Estado: <span style="color:${c.estado==='pendiente' ? '#f59e0b' : c.estado==='aprobada' ? '#0b74de' : '#1f9254'}">${c.estado || 'pendiente'}</span></div>
               </div>
             `).join('') + '</div>';
         } else {
-          cont.innerHTML = '<div>No hay campañas creadas.</div>';
+          cont.innerHTML = '<div class="muted">No hay campañas registradas todavía.</div>';
         }
       } catch (err) {
         cont.innerHTML = '<div class="error-message">Error cargando campañas.</div>';
@@ -102,7 +107,6 @@
       }
     });
 
-    // --- Gestión de sesión WhatsApp ---
     async function cargarEstadoSesion() {
       const statusDiv = document.getElementById('wapp-session-status');
       statusDiv.textContent = 'Consultando estado...';
@@ -110,66 +114,48 @@
         const res = await fetch('/habysupply/wapp-session');
         const data = await res.json();
         if (data && data.status) {
-          statusDiv.innerHTML = `<b>Estado:</b> <span style="color:${data.status==='conectado'?'#46b450':'#dc3232'}">${data.status}</span>`;
-          const campaniaSection = document.getElementById('campania-section');
-          if (data.status === 'conectado') {
-            campaniaSection.style.display = '';
-          } else {
-            campaniaSection.style.display = 'none';
-          }
+          const ok = data.status === 'conectado';
+          statusDiv.innerHTML = `<span class="${ok ? 'status-ok' : 'status-off'}">${data.status}</span>`;
+          document.getElementById('campania-section').style.display = ok ? '' : 'none';
         } else {
-          statusDiv.innerHTML = '<span style="color:#dc3232">No conectado</span>';
-          campaniaSection.style.display = 'none';
+          statusDiv.innerHTML = '<span class="status-off">desconectado</span>';
+          document.getElementById('campania-section').style.display = 'none';
         }
-      } catch {
-        statusDiv.innerHTML = '<span style="color:#dc3232">Error consultando estado</span>';
-        campaniaSection.style.display = 'none';
+      } catch (err) {
+        statusDiv.innerHTML = '<span class="status-off">Error consultando estado</span>';
+        document.getElementById('campania-section').style.display = 'none';
       }
     }
 
-    document.getElementById('wapp-session-init').onclick = async function() {
+    document.getElementById('wapp-session-init').addEventListener('click', async function() {
       this.disabled = true;
       try {
         const res = await fetch('/habysupply/wapp-session/init', { method: 'POST' });
         const data = await res.json();
-        alert(data.message || (data.success ? 'Sesión iniciada.' : 'Error iniciando sesión.'));
-        cargarEstadoSesion();
-      } catch {
+        alert(data.message || (data.success ? 'Sesión iniciándose...' : 'No se pudo iniciar'));
+      } catch (err) {
         alert('Error iniciando sesión.');
       }
       this.disabled = false;
-    };
-    document.getElementById('wapp-session-close').onclick = async function() {
+      cargarEstadoSesion();
+    });
+
+    document.getElementById('wapp-session-close').addEventListener('click', async function() {
       this.disabled = true;
       try {
         const res = await fetch('/habysupply/wapp-session/close', { method: 'POST' });
         const data = await res.json();
-        alert(data.message || (data.success ? 'Sesión cerrada.' : 'Error cerrando sesión.'));
-        cargarEstadoSesion();
-      } catch {
+        alert(data.message || (data.success ? 'Sesión cerrada.' : 'No se pudo cerrar'));
+      } catch (err) {
         alert('Error cerrando sesión.');
       }
       this.disabled = false;
-    };
+      cargarEstadoSesion();
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
       cargarCampanias();
       cargarEstadoSesion();
-    });
-  </script>
-</body>
-  </div>
-  <script>
-    document.getElementById('form-campania').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const nombre = this.nombre.value;
-      const mensaje = this.mensaje.value;
-      const res = await fetch('/habysupply/campanias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, mensaje })
-      });
-      const data = await res.json();
-      document.getElementById('campania-resultado').textContent = data.ok ? 'Campaña creada con ID: ' + data.id : 'Error: ' + (data.error || data.details);
     });
   </script>
 </body>
