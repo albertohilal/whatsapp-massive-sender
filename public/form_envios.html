@@ -49,9 +49,19 @@
 
   <button class="btn btn-success">Agregar Seleccionados a Campaña</button>
     <div class="mt-4">
-      <a href="index.html" class="btn btn-secondary">Volver al inicio</a>
-    </div>
+    <a id="volver-form-envios" href="index.html" class="btn btn-secondary">Volver al inicio</a>
+  </div>
 
   <script src="envios_front.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionOverride = params.get('session') || params.get('sessionName');
+      const link = document.getElementById('volver-form-envios');
+      if (link && sessionOverride === 'habysupply') {
+        link.href = '/habysupply/dashboard.html';
+      }
+    });
+  </script>
 </body>
 </html>

@@ -5,9 +5,14 @@ const connection = require('../db/connection');
 // Obtener todas las campañas
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await connection.query(
-      'SELECT id, nombre, mensaje, estado FROM ll_campanias_whatsapp'
-    );
+    const clienteId = req.session?.cliente_id || req.query.cliente_id || null;
+    let sql = 'SELECT id, nombre, mensaje, estado FROM ll_campanias_whatsapp';
+    const params = [];
+    if (clienteId) {
+      sql += ' WHERE cliente_id = ?';
+      params.push(clienteId);
+    }
+    const [rows] = await connection.query(sql, params);
     res.json(rows);
   } catch (error) {
     console.error('Error al obtener campañas:', error);
@@ -35,16 +40,17 @@ router.get('/:id', async (req, res) => {
 
 // Crear nueva campaña
 router.post('/', async (req, res) => {
-  const { nombre, mensaje, estado } = req.body;
+  const { nombre, mensaje, estado = 'pendiente', cliente_id } = req.body;
+  const clienteId = cliente_id || req.session?.cliente_id || null;
 
-  if (!nombre || !mensaje || !estado) {
+  if (!nombre || !mensaje || !estado || !clienteId) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
   }
 
   try {
     await connection.query(
-      'INSERT INTO ll_campanias_whatsapp (nombre, mensaje, estado, fecha_creacion) VALUES (?, ?, ?, NOW())',
-      [nombre, mensaje, estado]
+      'INSERT INTO ll_campanias_whatsapp (nombre, mensaje, estado, fecha_creacion, cliente_id) VALUES (?, ?, ?, NOW(), ?)',
+      [nombre, mensaje, estado, clienteId]
     );
     res.json({ success: true });
   } catch (error) {
@@ -56,13 +62,22 @@ router.post('/', async (req, res) => {
 // Actualizar campaña
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, mensaje, estado } = req.body;
+  const { nombre, mensaje, estado, cliente_id } = req.body;
+
+  if (!nombre || !mensaje || !estado) {
+    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  }
 
   try {
-    await connection.query(
-      'UPDATE ll_campanias_whatsapp SET nombre = ?, mensaje = ?, estado = ? WHERE id = ?',
-      [nombre, mensaje, estado, id]
-    );
+    const params = [nombre, mensaje, estado];
+    let sql = 'UPDATE ll_campanias_whatsapp SET nombre = ?, mensaje = ?, estado = ?';
+    if (cliente_id) {
+      sql += ', cliente_id = ?';
+      params.push(cliente_id);
+    }
+    sql += ' WHERE id = ?';
+    params.push(id);
+    await connection.query(sql, params);
     res.json({ success: true });
   } catch (error) {
     console.error('Error al actualizar campaña:', error);

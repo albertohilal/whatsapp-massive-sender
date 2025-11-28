@@ -19,7 +19,7 @@
     </div>
 
 
-    <div class="mb-3">
+    <div class="mb-3" id="session-field">
       <label for="sessionName" class="form-label">Número / Sesión de WhatsApp</label>
       <select class="form-select" id="sessionName" required></select>
     </div>
@@ -58,18 +58,39 @@
     <tbody id="campanias-table-body"></tbody>
   </table>
 
+  <div class="mt-4 text-center">
+    <a id="volver-inicio" href="index.html" class="btn btn-secondary">Volver al inicio</a>
+  </div>
+
   <script>
+    const CLIENTE_HABY = 51;
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionOverride = urlParams.get('session') || urlParams.get('sessionName');
+    document.addEventListener('DOMContentLoaded', () => {
+      if (sessionOverride === 'habysupply') {
+        const volver = document.getElementById('volver-inicio');
+        if (volver) volver.href = '/habysupply/dashboard.html';
+      }
+    });
+
     async function cargarSesiones() {
       // Cargar sesiones activas para el selector
       const res = await fetch('/api/sesiones');
       const data = await res.json();
       const select = document.getElementById('sessionName');
       select.innerHTML = data.map(s => `<option value="${s.session}">${s.session} (${s.activo ? 'Activo' : 'Inactivo'})</option>`).join('');
+      if (sessionOverride) {
+        if (![...select.options].some(opt => opt.value === sessionOverride)) {
+          select.insertAdjacentHTML('beforeend', `<option value="${sessionOverride}">${sessionOverride}</option>`);
+        }
+        select.value = sessionOverride;
+        document.getElementById('session-field').style.display = 'none';
+      }
     }
 
     async function cargarCampanias() {
       try {
-        const res = await fetch('/api/campanias');
+        const res = await fetch(`/api/campanias?cliente_id=${CLIENTE_HABY}`);
         const data = await res.json();
         const tbody = document.getElementById('campanias-table-body');
         tbody.innerHTML = '';
@@ -122,14 +143,14 @@
       const nombre = document.getElementById('nombre').value.trim();
       const mensaje = document.getElementById('mensaje').value.trim();
       const estado = document.getElementById('estado').value;
-      const sessionName = document.getElementById('sessionName').value;
+      const sessionName = sessionOverride || document.getElementById('sessionName').value;
 
       if (!nombre || !mensaje || !sessionName) {
         alert('Todos los campos son obligatorios.');
         return;
       }
 
-      const data = { nombre, mensaje, estado, sessionName };
+      const data = { nombre, mensaje, estado, sessionName, cliente_id: CLIENTE_HABY };
       const url = id ? `/api/campanias/${id}` : '/api/campanias';
       const method = id ? 'PUT' : 'POST';
 
@@ -159,9 +180,5 @@
   cargarSesiones();
   cargarCampanias();
   </script>
-</body>
-  <div class="mt-4 text-center">
-    <a href="index.html" class="btn btn-secondary">Volver al inicio</a>
-  </div>
 </body>
 </html>
