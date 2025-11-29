@@ -7,6 +7,7 @@
 </head>
 <body>
   <h1>Campañas de Habysupply</h1>
+  <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
   <p class="subtitle">Consulta las campañas creadas y los destinatarios asignados.</p>
 
   <div class="actions">
@@ -44,6 +45,18 @@
   </section>
 
   <script>
+    async function mostrarUsuario() {
+      try {
+        const res = await fetch('/api/usuario-logueado');
+        const data = await res.json();
+        if (data && data.usuario) {
+          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+        }
+      } catch (err) {
+        document.getElementById('usuario-logueado').textContent = '';
+      }
+    }
+    mostrarUsuario();
     let cacheCampanias = [];
 
     async function cargarCampanias() {

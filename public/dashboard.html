@@ -43,6 +43,19 @@
 </head>
 <body>
   <h1>Panel Administrador</h1>
+  <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
+    async function mostrarUsuario() {
+      try {
+        const res = await fetch('/api/usuario-logueado');
+        const data = await res.json();
+        if (data && data.usuario) {
+          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+        }
+      } catch (err) {
+        document.getElementById('usuario-logueado').textContent = '';
+      }
+    }
+    mostrarUsuario();
 
   <section class="card">
     <h2>Estado del servicio</h2>

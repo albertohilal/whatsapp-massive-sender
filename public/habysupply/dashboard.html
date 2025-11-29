@@ -7,6 +7,7 @@
 </head>
 <body>
   <h1>Habysupply</h1>
+  <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
   <p class="subtitle">Sigue estos pasos para dejar tus campañas listas y permitir que el administrador realice los envíos.</p>
 
   <section class="card" style="margin-bottom:24px;">
@@ -39,6 +40,18 @@
   </section>
 
   <script>
+    async function mostrarUsuario() {
+      try {
+        const res = await fetch('/api/usuario-logueado');
+        const data = await res.json();
+        if (data && data.usuario) {
+          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+        }
+      } catch (err) {
+        document.getElementById('usuario-logueado').textContent = '';
+      }
+    }
+    mostrarUsuario();
     async function cargarCampanias() {
       // Solo valida estado para permitir acceso al resto de acciones
       try {
