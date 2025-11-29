@@ -46,14 +46,25 @@
   <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
   <script>
     async function mostrarUsuario() {
+      const cont = document.getElementById('usuario-logueado');
       try {
         const res = await fetch('/api/usuario-logueado');
+        if (!res.ok) {
+          cont.textContent = 'Error al consultar usuario';
+          cont.style.color = 'red';
+          return;
+        }
         const data = await res.json();
         if (data && data.usuario) {
-          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+          cont.textContent = `Usuario: ${data.usuario}`;
+          cont.style.color = '';
+        } else {
+          cont.textContent = 'No hay usuario logueado';
+          cont.style.color = 'orange';
         }
       } catch (err) {
-        document.getElementById('usuario-logueado').textContent = '';
+        cont.textContent = 'Error al consultar usuario';
+        cont.style.color = 'red';
       }
     }
     mostrarUsuario();
