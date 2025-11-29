@@ -156,7 +156,13 @@ module.exports = {
   listEnvios: async (req, res) => {
     const pool = require('../db/connection');
     const campaniaId = req.query.campania_id;
-    const clienteId = req.session?.cliente_id || 51;
+    let clienteId;
+    // Si es admin, puede pasar cliente_id por querystring
+    if (req.session?.tipo === 'admin' && req.query.cliente_id) {
+      clienteId = parseInt(req.query.cliente_id, 10);
+    } else {
+      clienteId = req.session?.cliente_id || 51;
+    }
 
     if (!campaniaId) {
       return res.status(400).json({ error: 'Falta campania_id' });
