@@ -17,6 +17,10 @@
 
   <section class="card">
     <h2>Listado de campañas</h2>
+    <div id="admin-clientes-selector" style="margin-bottom:16px;display:none">
+      <label for="selector-clientes">Filtrar por cliente:</label>
+      <select id="selector-clientes"></select>
+    </div>
     <div id="lista-campanias" class="muted">Cargando...</div>
   </section>
 
@@ -51,21 +55,44 @@
         const data = await res.json();
         if (data && data.usuario) {
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+          if (data.tipo === 'admin') {
+            document.getElementById('admin-clientes-selector').style.display = '';
+            await cargarClientesSelector();
+          }
         }
       } catch (err) {
         document.getElementById('usuario-logueado').textContent = '';
       }
     }
-    mostrarUsuario();
+
     let cacheCampanias = [];
 
-    async function cargarCampanias() {
+    async function cargarClientesSelector() {
+      const select = document.getElementById('selector-clientes');
+      select.innerHTML = '<option value="">Todos</option>';
+      try {
+        const res = await fetch('/admin/api/clientes');
+        const clientes = await res.json();
+        clientes.forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+        });
+        select.addEventListener('change', () => cargarCampanias(true));
+      } catch {}
+    }
+
+    async function cargarCampanias(fromSelector) {
       const cont = document.getElementById('lista-campanias');
       cont.textContent = 'Cargando campañas...';
-      // Detectar modo admin y cliente_id por querystring
       const params = new URLSearchParams(window.location.search);
       const modoAdmin = params.get('modo') === 'admin';
-      const clienteId = params.get('cliente');
+      let clienteId = params.get('cliente');
+      // Si el admin accede con cliente en la URL, usar ese valor aunque el selector no se haya usado
+      if (modoAdmin) {
+        const select = document.getElementById('selector-clientes');
+        if (fromSelector && select && select.value) {
+          clienteId = select.value;
+        }
+      }
       let url = '/habysupply/api/campanias';
       if (modoAdmin && clienteId) {
         url += `?cliente_id=${clienteId}`;
@@ -148,6 +175,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      mostrarUsuario();
       cargarCampanias();
       const select = document.getElementById('selector-campania');
       if (select) {

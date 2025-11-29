@@ -40,6 +40,16 @@
   </section>
 
   <script>
+    // Redirigir correctamente el botón 'Ver campañas' si el admin está viendo el panel de un cliente
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const modoAdmin = params.get('modo') === 'admin';
+      const clienteId = params.get('cliente');
+      const btnVerCampanias = document.querySelector('a.btn-link[href="/habysupply/campanias.html"]');
+      if (btnVerCampanias && modoAdmin && clienteId) {
+        btnVerCampanias.href = `/habysupply/campanias.html?modo=admin&cliente=${clienteId}`;
+      }
+    });
     async function mostrarUsuario() {
       try {
         const res = await fetch('/api/usuario-logueado');

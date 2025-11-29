@@ -44,6 +44,13 @@
 <body>
   <h1>Panel Administrador</h1>
   <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
+  <div id="panel-clientes" style="margin: 20px 0;">
+    <label for="select-cliente">Elegir cliente:</label>
+    <select id="select-cliente">
+      <option value="">-- Selecciona un cliente --</option>
+    </select>
+    <button id="btn-ir-panel" disabled>Ir al panel del cliente</button>
+  </div>
   <script>
     async function mostrarUsuario() {
       const cont = document.getElementById('usuario-logueado');
@@ -68,6 +75,45 @@
       }
     }
     mostrarUsuario();
+
+    // Cargar lista de clientes
+    fetch('/admin/api/clientes')
+      .then(res => res.json())
+      .then(clientes => {
+        console.log('Respuesta clientes:', clientes);
+        const select = document.getElementById('select-cliente');
+        if (Array.isArray(clientes)) {
+          clientes.forEach(cliente => {
+            const option = document.createElement('option');
+            option.value = cliente.id;
+            option.textContent = cliente.nombre;
+            select.appendChild(option);
+          });
+        } else {
+          const option = document.createElement('option');
+          option.value = "";
+          option.textContent = "Error cargando clientes";
+          select.appendChild(option);
+        }
+      });
+
+    // Habilitar botón solo si hay cliente seleccionado
+    document.getElementById('select-cliente').addEventListener('change', function() {
+      document.getElementById('btn-ir-panel').disabled = !this.value;
+    });
+
+    // Redirigir al panel del cliente seleccionado
+    document.getElementById('btn-ir-panel').addEventListener('click', function() {
+      const select = document.getElementById('select-cliente');
+      let clienteId = select.value;
+      // Forzar Haby a 51 si el nombre es Haby
+      if (select.options[select.selectedIndex].text === 'Haby') {
+        clienteId = 51;
+      }
+      if (clienteId) {
+        window.location.href = `/habysupply/dashboard.html?cliente=${clienteId}&modo=admin`;
+      }
+    });
   </script>
 
   <section class="card">

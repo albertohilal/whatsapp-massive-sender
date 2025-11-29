@@ -5,13 +5,16 @@ const connection = require('../db/connection');
 // Obtener todas las campañas
 router.get('/', async (req, res) => {
   try {
-    const sessionCliente = req.session?.tipo === 'cliente' ? req.session?.cliente_id : null;
-    const clienteId = sessionCliente || req.query.cliente_id || null;
-    let sql = 'SELECT id, nombre, mensaje, estado FROM ll_campanias_whatsapp';
+    let sql = 'SELECT id, nombre, mensaje, estado, cliente_id FROM ll_campanias_whatsapp';
     const params = [];
-    if (clienteId) {
+    if (req.session?.tipo === 'cliente') {
+      // Si es cliente, solo ve sus campañas
       sql += ' WHERE cliente_id = ?';
-      params.push(clienteId);
+      params.push(req.session.cliente_id);
+    } else if (req.session?.tipo === 'admin' && req.query.cliente_id) {
+      // Si es admin y pasa cliente_id, filtra por ese cliente
+      sql += ' WHERE cliente_id = ?';
+      params.push(req.query.cliente_id);
     }
     const [rows] = await connection.query(sql, params);
     res.json(rows);
