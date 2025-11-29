@@ -24,9 +24,9 @@ module.exports = {
       req.session.tipo = user.tipo;
       req.session.cliente_id = user.cliente_id;
       // Redirigir según tipo de usuario
-      let redirect = '/';
-      if (user.tipo === 'admin') redirect = '/dashboard.html';
-      else if (user.tipo === 'cliente') redirect = '/habysupply/dashboard.html';
+  let redirect = '/';
+  if (user.tipo === 'admin') redirect = '/admin/dashboard.html';
+  else if (user.tipo === 'cliente') redirect = '/habysupply/dashboard.html';
       return res.json({ ok: true, redirect });
     } catch (err) {
       res.status(500).json({ ok: false, error: 'Error en el servidor', details: err.message });

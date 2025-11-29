@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inicio - WhatsApp Massive Sender</title>
+  <title>Panel Administrador</title>
   <script>
     async function ejecutarAccion(accion) {
       const res = await fetch(`/pm2/${accion}`, { method: 'POST' });
@@ -101,46 +101,23 @@
           <td>${s.session}</td>
           <td><span style="color:${s.activo ? 'green' : 'red'}">${s.activo ? 'Activo' : 'Inactivo'}</span></td>
           <td>
-            <button onclick="validarSesion('${s.session}')">Validar</button>
-            <button onclick="detenerSesion('${s.session}')">Detener</button>
+            <button onclick="cerrarSesion('${s.session}')">Cerrar</button>
           </td>
-          <td id="qr-${s.session}"></td>
+          <td>${s.qr ? `<img src='${s.qr}' width='80'/>` : ''}</td>
         </tr>
       `).join('');
     }
-
     async function iniciarSesion() {
-      const sessionName = document.getElementById('nuevoSessionName').value.trim();
-      if (!sessionName) return alert('Ingresa el nombre de la sesión');
-      const res = await fetch('/api/sesiones/iniciar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionName })
-      });
-      const data = await res.json();
-      if (data.qr) {
-        document.getElementById(`qr-${sessionName}`).innerHTML = `<img src='https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(data.qr)}&size=150x150' alt='QR' />`;
-      }
+      const nombre = document.getElementById('nuevoSessionName').value.trim();
+      if (!nombre) return alert('Ingresa un nombre de sesión');
+      await fetch(`/api/sesiones`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre }) });
       cargarSesiones();
     }
-
-    async function validarSesion(sessionName) {
-      const res = await fetch(`/api/sesiones/${sessionName}/validar`);
-      const data = await res.json();
-      alert(`Sesión ${sessionName}: ${data.activo ? 'Activa' : 'Inactiva'}`);
+    async function cerrarSesion(nombre) {
+      await fetch(`/api/sesiones/${nombre}`, { method: 'DELETE' });
       cargarSesiones();
     }
-
-    async function detenerSesion(sessionName) {
-      await fetch(`/api/sesiones/${sessionName}/detener`, { method: 'POST' });
-      alert(`Sesión ${sessionName} detenida (placeholder)`);
-      cargarSesiones();
-    }
-
-    window.onload = function() {
-      cargarEstado();
-      cargarSesiones();
-    };
+    window.addEventListener('DOMContentLoaded', cargarSesiones);
   </script>
 </body>
 </html>
