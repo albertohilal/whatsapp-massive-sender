@@ -79,7 +79,9 @@ module.exports = {
     // Autenticación básica (ejemplo)
     const { usuario, password } = req.body;
     if (usuario === 'habysupply' && password === 'tu_clave_segura') {
-      req.session.cliente = 'habysupply';
+      req.session.usuario = usuario;
+      req.session.tipo = 'cliente';
+      req.session.cliente_id = 51;
       return res.json({ ok: true });
     }
     res.status(401).json({ ok: false, error: 'Credenciales incorrectas' });
