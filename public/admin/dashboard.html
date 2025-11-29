@@ -44,6 +44,7 @@
 <body>
   <h1>Panel Administrador</h1>
   <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
+  <script>
     async function mostrarUsuario() {
       try {
         const res = await fetch('/api/usuario-logueado');
@@ -56,6 +57,7 @@
       }
     }
     mostrarUsuario();
+  </script>
 
   <section class="card">
     <h2>Estado del servicio</h2>
