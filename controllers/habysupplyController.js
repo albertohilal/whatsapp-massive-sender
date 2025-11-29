@@ -92,7 +92,13 @@ module.exports = {
   },
   listCampanias: async (req, res) => {
     const pool = require('../db/connection');
-    const clienteId = req.session?.cliente_id || 51;
+    let clienteId;
+    // Si es admin, puede pasar cliente_id por querystring
+    if (req.session?.tipo === 'admin' && req.query.cliente_id) {
+      clienteId = parseInt(req.query.cliente_id, 10);
+    } else {
+      clienteId = req.session?.cliente_id || 51;
+    }
     try {
       const conn = await pool.getConnection();
       const [rows] = await conn.query(`
