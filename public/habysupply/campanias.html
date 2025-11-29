@@ -50,7 +50,7 @@
       const cont = document.getElementById('lista-campanias');
       cont.textContent = 'Cargando campañas...';
       try {
-        const res = await fetch('/habysupply/campanias');
+        const res = await fetch('/habysupply/api/campanias');
         const data = await res.json();
         cacheCampanias = Array.isArray(data) ? data : [];
         if (!cacheCampanias.length) {
