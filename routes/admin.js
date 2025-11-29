@@ -1,17 +1,19 @@
+const express = require('express');
+const router = express.Router();
+const pool = require('../db/connection');
+
 // Listar todos los clientes para el panel admin
+// Listar clientes desde ll_usuarios donde tipo='cliente'
 router.get('/api/clientes', async (req, res) => {
   try {
     const conn = await pool.getConnection();
-    const [rows] = await conn.query('SELECT id, nombre FROM clientes ORDER BY nombre');
+    const [rows] = await conn.query("SELECT id, usuario AS nombre FROM ll_usuarios WHERE tipo='cliente' ORDER BY usuario");
     conn.release();
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: 'Error consultando clientes', details: err.message });
   }
 });
-const express = require('express');
-const router = express.Router();
-const pool = require('../db/connection');
 
 // Listar campañas pendientes
 router.get('/campanias', async (req, res) => {
