@@ -62,7 +62,7 @@ app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysu
 
 // Resto de middlewares y routers
 // Solo rutas API para /habysupply, no archivos estáticos
-app.use('/habysupply/api', habysupplyRouter);
+app.use('/habysupply/api', requireAuth, habysupplyRouter);
 app.use('/admin', requireAuth, adminRouter);
 
 // Servir archivos estáticos sin sobrescribir la ruta principal
