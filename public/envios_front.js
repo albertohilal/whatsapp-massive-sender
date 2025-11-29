@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
+
   // Cargar campañas
   const campaniaSelect = document.getElementById('campaniaSelect');
   try {
@@ -20,6 +21,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Filtrar lugares
   document.getElementById('filtrarBtn').addEventListener('click', cargarLugares);
 
+  // Al cambiar campaña, recargar lugares y tildes
+  campaniaSelect.addEventListener('change', cargarLugares);
+
   // Agregar seleccionados a campaña
   document.querySelector('.btn-success').addEventListener('click', async () => {
     const campaniaId = campaniaSelect.value;
@@ -40,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       if (data.success) {
         alert('Prospectos agregados correctamente.');
+        await cargarLugares(); // Refrescar la tabla tras guardar
       } else {
         alert('Error al agregar prospectos.');
       }
@@ -54,106 +59,98 @@ async function cargarLugares() {
   const statusDiv = document.getElementById('statusMessage');
   statusDiv.style.display = 'block';
   statusDiv.textContent = 'Cargando prospectos...';
-  
+
   const campaniaId = document.getElementById('campaniaSelect')?.value || '';
   const filtroRubro = document.getElementById('filtroRubro')?.value?.toLowerCase() || '';
   const filtroDireccion = document.getElementById('filtroDireccion')?.value?.toLowerCase() || '';
   const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
+  const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
 
   try {
-    // Determinar el cliente_id según la sesión activa
-    // Ejemplo: puedes obtenerlo de una variable global, del backend, o del selector de sesión
-    // Aquí lo dejamos fijo para Haby (51) y Beto (1) como ejemplo
     let cliente_id = 51; // Cambia dinámicamente según la sesión activa
-    // Si tienes un selector de sesión, puedes obtener el cliente_id correspondiente
-
-    // Construir la URL con los parámetros de filtro
     const params = new URLSearchParams();
-    if (campaniaId) params.append('campania', campaniaId);
-    if (filtroRubro) params.append('rubro', filtroRubro);
-    if (filtroDireccion) params.append('direccion', filtroDireccion);
-    if (soloValidos) params.append('wapp_valido', soloValidos);
-    params.append('cliente_id', cliente_id);
+  if (campaniaId) params.append('campania', campaniaId);
+  if (filtroRubro) params.append('rubro', filtroRubro);
+  if (filtroDireccion) params.append('direccion', filtroDireccion);
+  if (soloValidos) params.append('wapp_valido', soloValidos);
+  params.append('cliente_id', cliente_id);
+  if (soloSeleccionados) params.append('solo_seleccionados', '1');
 
+    // 1. Obtener prospectos disponibles
     const url = `/api/envios/filtrar-prospectos?${params.toString()}`;
-    console.log('🚀 Llamando a URL:', url);
-    
     const res = await fetch(url);
-    console.log('📡 Response status:', res.status);
-    
     if (!res.ok) {
       const errorText = await res.text();
-      console.error('❌ Error HTTP:', res.status, errorText);
       statusDiv.textContent = `Error del servidor (${res.status}): ${errorText}`;
       statusDiv.className = 'alert alert-danger mb-3';
       return;
     }
-    
-    const data = await res.json();
-    console.log('📦 Data recibida:', Array.isArray(data) ? `Array con ${data.length} elementos` : data);
-    
+    const lugares = await res.json();
+
+    // 2. Obtener prospectos ya asignados a la campaña
+    let asignados = [];
+    if (campaniaId) {
+      const resAsignados = await fetch(`/api/envios?campania_id=${campaniaId}`);
+      if (resAsignados.ok) {
+        const envios = await resAsignados.json();
+        // Solo agregar si existe lugar_id
+        asignados = envios.filter(e => e.lugar_id !== undefined && e.lugar_id !== null).map(e => String(e.lugar_id));
+      }
+    }
+
     const tbody = document.getElementById('tablaProspectos');
     tbody.innerHTML = '';
+    let lugaresFiltrados = lugares;
+    if (soloSeleccionados) {
+      lugaresFiltrados = lugares.filter(lugar => asignados.includes(String(lugar.id)));
+    }
+    statusDiv.textContent = `Cargando ${lugaresFiltrados.length} prospectos...`;
 
-    // Verificar si la respuesta es un array válido
-    if (!Array.isArray(data)) {
-      console.error('❌ Error: La respuesta no es un array válido:', data);
-      statusDiv.textContent = 'Error: Respuesta inválida del servidor';
-      statusDiv.className = 'alert alert-danger mb-3';
-      if (data.error) {
-        console.error('Error del servidor:', data.error);
-      }
+    // Si no hay seleccionados pero el filtro está activo, mostrar mensaje
+    if (soloSeleccionados && lugaresFiltrados.length === 0) {
+      statusDiv.textContent = 'No hay prospectos seleccionados en esta campaña.';
+      statusDiv.className = 'alert alert-warning mb-3';
       return;
     }
 
-    const lugares = data;
-    statusDiv.textContent = `Cargando ${lugares.length} prospectos...`;
-    
-    lugares.forEach((lugar) => {
+    lugaresFiltrados.forEach((lugar) => {
       const tr = document.createElement('tr');
-
       // Checkbox para seleccionar
       const tdSelect = document.createElement('td');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = lugar.id;
+      // Marcar con tilde si ya está asignado
+      if (asignados.includes(String(lugar.id))) {
+        checkbox.checked = true;
+      }
       tdSelect.appendChild(checkbox);
-
       // Nombre
       const tdNombre = document.createElement('td');
       tdNombre.textContent = lugar.nombre;
-
-      // Teléfono (de telefono_wapp)
+      // Teléfono
       const tdTelefono = document.createElement('td');
       tdTelefono.textContent = lugar.telefono_wapp || 'N/A';
-
       // Rubro
       const tdRubro = document.createElement('td');
       tdRubro.textContent = lugar.rubro;
-
       // Dirección
       const tdDireccion = document.createElement('td');
       tdDireccion.textContent = lugar.direccion;
-
       tr.appendChild(tdSelect);
       tr.appendChild(tdNombre);
       tr.appendChild(tdTelefono);
       tr.appendChild(tdRubro);
       tr.appendChild(tdDireccion);
-
       tbody.appendChild(tr);
     });
-    
+
     statusDiv.textContent = `✅ ${lugares.length} prospectos cargados exitosamente`;
     statusDiv.className = 'alert alert-success mb-3';
-    
-    // Ocultar mensaje después de 3 segundos
     setTimeout(() => {
       statusDiv.style.display = 'none';
     }, 3000);
-    
   } catch (err) {
-    console.error('Error cargando lugares:', err);
     statusDiv.textContent = '❌ Error al cargar prospectos: ' + err.message;
     statusDiv.className = 'alert alert-danger mb-3';
   }
