@@ -4,7 +4,8 @@ const router = express.Router();
 const habysupplyController = require('../controllers/habysupplyController');
 
 const ensureCliente = (req, res, next) => {
-  if (req.session && req.session.tipo === 'cliente') {
+  // Permitir acceso si es cliente o admin
+  if (req.session && (req.session.tipo === 'cliente' || req.session.tipo === 'admin')) {
     return next();
   }
   if (req.accepts('html')) {
