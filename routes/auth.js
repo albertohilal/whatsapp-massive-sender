@@ -2,7 +2,16 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 
+
 router.post('/login', authController.login);
+
+// Endpoint para obtener el usuario logueado
+router.get('/usuario-logueado', (req, res) => {
+	if (req.session && req.session.usuario) {
+		return res.json({ usuario: req.session.usuario });
+	}
+	res.json({ usuario: null });
+});
 
 // Endpoint para iniciar WhatsApp bajo demanda
 const { iniciarCliente } = require('../bot/whatsapp_instance');
