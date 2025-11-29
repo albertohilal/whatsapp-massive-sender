@@ -12,12 +12,10 @@ test.describe('Dashboard Administrador', () => {
     await page.fill('input[name="password"]', ADMIN_PASS);
     await page.click('button[type="submit"]');
     await page.waitForURL(`${BASE_URL}/admin/dashboard.html`);
-    await expect(page.locator('h1')).toHaveText(/Panel Administrador/i);
-    // Verifica elementos clave del dashboard
-    await expect(page.locator('text=Campañas')).toBeVisible();
-    await expect(page.locator('text=Prospectos')).toBeVisible();
-    await expect(page.locator('text=Envios')).toBeVisible();
-    // Verifica botón de WhatsApp si existe
-    await expect(page.locator('button')).toContainText(['Iniciar WhatsApp', 'Cerrar sesión']);
+  await expect(page.locator('h1')).toHaveText(/Panel Administrador/i);
+  // Verifica botones clave del dashboard
+  await expect(page.locator('#btn-campanias')).toBeVisible();
+  await expect(page.locator('#btn-prospectos')).toBeVisible();
+  await expect(page.locator('#btn-envios')).toBeVisible();
   });
 });

@@ -13,11 +13,15 @@ const ensureCliente = (req, res, next) => {
   return res.status(403).json({ ok: false, error: 'No autorizado' });
 };
 
+// Solo proteger rutas bajo /api, no archivos estáticos
 router.use((req, res, next) => {
-  if (req.method === 'POST' && req.path === '/login') {
-    return next();
+  if (req.baseUrl.endsWith('/api')) {
+    if (req.method === 'POST' && req.path === '/login') {
+      return next();
+    }
+    return ensureCliente(req, res, next);
   }
-  return ensureCliente(req, res, next);
+  next();
 });
 
 // Login opcional para panel independiente

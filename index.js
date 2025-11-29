@@ -57,7 +57,12 @@ const marcarEnviadoRoute = require('./routes/marcar_enviado');
 app.use('/api/marcar-enviado', requireAuth, marcarEnviadoRoute);
 const sesionesRoutes = require('./routes/sesiones');
 app.use('/api/sesiones', requireAuth, sesionesRoutes);
-app.use('/habysupply', habysupplyRouter);
+// Servir archivos estáticos de habysupply antes de cualquier router o middleware
+app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysupply')));
+
+// Resto de middlewares y routers
+// Solo rutas API para /habysupply, no archivos estáticos
+app.use('/habysupply/api', habysupplyRouter);
 app.use('/admin', requireAuth, adminRouter);
 
 // Servir archivos estáticos sin sobrescribir la ruta principal

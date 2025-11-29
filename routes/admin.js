@@ -33,6 +33,10 @@ router.post('/campanias/:id/aprobar', async (req, res) => {
 
 // Enviar campaña (solo cambia estado, la lógica real de envío debe ir en el backend)
 router.post('/campanias/:id/enviar', async (req, res) => {
+  // Solo el administrador puede enviar campañas
+  if (!req.session || req.session.tipo !== 'admin') {
+    return res.status(403).json({ error: 'Solo el administrador puede enviar campañas.' });
+  }
   const id = req.params.id;
   try {
     const conn = await pool.getConnection();
