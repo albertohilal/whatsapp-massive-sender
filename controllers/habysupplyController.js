@@ -185,5 +185,8 @@ module.exports = {
     } catch (err) {
       res.status(500).json({ error: 'Error consultando envíos', details: err.message });
     }
-  }
+  },
+  // Exportar funciones para acceder a instancias de WhatsApp
+  getWappClient,
+  createWappClient
 };

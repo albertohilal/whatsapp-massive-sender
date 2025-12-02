@@ -32,6 +32,9 @@
     </div>
     <div id="resumen-envios" class="muted" style="margin-bottom:12px;">Selecciona una campaña para ver sus destinatarios.</div>
     <button id="btn-enviar-campania" class="btn-link" style="margin-bottom:12px;display:none;">Enviar campaña</button>
+    <div id="nota-envio" class="muted" style="margin-bottom:12px;display:none;color:#dc2626;">
+      Nota: Solo el cliente puede enviar campañas desde su sesión de WhatsApp.
+    </div>
     <div class="table-wrapper">
       <table>
         <thead>
@@ -62,19 +65,21 @@
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
           
           if (data.tipo === 'admin') {
-            console.log('✅ Usuario es admin, mostrando botón enviar campaña');
+            console.log('✅ Usuario es admin, mostrando selector y botón enviar');
             document.getElementById('admin-clientes-selector').style.display = '';
             await cargarClientesSelector();
-            // Mostrar botón enviar campaña solo para admin
+            // Mostrar botón enviar campaña para admin
             if (btnEnviar) {
               btnEnviar.style.display = 'block';
-              console.log('✅ Botón mostrado con display:', btnEnviar.style.display);
-            } else {
-              console.error('❌ No se encontró el botón btn-enviar-campania');
+              console.log('✅ Botón mostrado para admin');
+            }
+            const notaEnvio = document.getElementById('nota-envio');
+            if (notaEnvio) {
+              notaEnvio.style.display = 'none';
             }
           } else {
             console.log('🚫 Usuario es cliente, ocultando botón enviar campaña');
-            // Ocultar botón enviar campaña para clientes
+            // Ocultar botón enviar campaña para clientes (solo admin puede enviar)
             if (btnEnviar) {
               btnEnviar.style.display = 'none';
             }
@@ -162,7 +167,15 @@
       }
       resumen.textContent = 'Cargando destinatarios...';
       try {
-        const res = await fetch(`/habysupply/api/envios?campania_id=${campaniaId}`);
+        // Construir URL con cliente_id si es modo admin
+        const params = new URLSearchParams(window.location.search);
+        const clienteId = params.get('cliente');
+        let url = `/habysupply/api/envios?campania_id=${campaniaId}`;
+        if (clienteId) {
+          url += `&cliente_id=${clienteId}`;
+        }
+        
+        const res = await fetch(url);
         const data = await res.json();
         if (Array.isArray(data)) {
           resumen.textContent = data.length
@@ -221,7 +234,15 @@
         // Obtener destinatarios pendientes
         let envios = [];
         try {
-          const res = await fetch(`/habysupply/api/envios?campania_id=${campaniaId}`);
+          // Construir URL con cliente_id si es modo admin
+          const params = new URLSearchParams(window.location.search);
+          const clienteId = params.get('cliente');
+          let url = `/habysupply/api/envios?campania_id=${campaniaId}`;
+          if (clienteId) {
+            url += `&cliente_id=${clienteId}`;
+          }
+          
+          const res = await fetch(url);
           const data = await res.json();
           envios = Array.isArray(data) ? data.filter(e => e.estado === 'pendiente') : [];
         } catch (err) {
@@ -234,8 +255,10 @@
           return;
         }
         // Preparar payload para envío masivo
+        // Siempre usar 'habysupply' como cliente (nombre de la sesión de WhatsApp)
         const payload = {
-          envios: envios.map(e => ({ id: e.id, telefono: e.telefono_wapp, texto: e.mensaje_final }))
+          envios: envios.map(e => ({ id: e.id, telefono: e.telefono_wapp, texto: e.mensaje_final })),
+          cliente: 'habysupply'
         };
         try {
           const res = await fetch('/api/generar-envios', {

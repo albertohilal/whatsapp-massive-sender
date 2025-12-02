@@ -1,19 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/connection');
-const whatsappInstance = require('../bot/whatsapp_instance');
 const moment = require('moment');
+
+// Importar el sistema de clientes WhatsApp de habysupply
+const habysupplyController = require('../controllers/habysupplyController');
 
 // Ruta para enviar mensajes masivos desde una campaña
 router.post('/', async (req, res) => {
-  const { envios } = req.body;
+  const { envios, cliente } = req.body;
 
   if (!Array.isArray(envios) || envios.length === 0) {
     return res.status(400).json({ error: 'No se proporcionaron mensajes para enviar.' });
   }
 
+  // Determinar el cliente (habysupply por defecto o el especificado)
+  const clienteNombre = cliente || req.session?.cliente || 'habysupply';
+  console.log(`📤 Enviando ${envios.length} mensajes usando sesión de cliente: ${clienteNombre}`);
+
   let enviados = 0;
   const resultados = [];
+
+  // Obtener instancia de WhatsApp del cliente
+  const clienteWapp = habysupplyController.getWappClient(clienteNombre);
+  
+  if (!clienteWapp || !clienteWapp.initialized || clienteWapp.status !== 'conectado') {
+    return res.status(400).json({ 
+      error: 'Sesión de WhatsApp no disponible',
+      details: `El cliente ${clienteNombre} debe iniciar sesión en WhatsApp primero.`
+    });
+  }
 
   for (const envio of envios) {
     const { id, telefono, texto } = envio;
@@ -30,7 +46,7 @@ router.post('/', async (req, res) => {
     }
 
     try {
-      const resultado = await whatsappInstance.sendMessage(`${telefono}@c.us`, texto);
+      const resultado = await clienteWapp.client.sendMessage(`${telefono}@c.us`, texto);
 
       if (resultado?.id?.id) {
         const fechaEnvio = moment().format('YYYY-MM-DD HH:mm:ss');
