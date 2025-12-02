@@ -76,7 +76,7 @@
       const statusDiv = document.getElementById('wapp-session-status');
       statusDiv.textContent = 'Consultando estado...';
       try {
-        const res = await fetch('/habysupply/wapp-session');
+        const res = await fetch('/habysupply/api/wapp-session');
         const data = await res.json();
         if (data && data.status) {
           const ok = data.status === 'conectado';
@@ -87,6 +87,7 @@
           document.getElementById('campania-section').style.display = 'none';
         }
       } catch (err) {
+        console.error('Error al cargar estado:', err);
         statusDiv.innerHTML = '<span class="status-off">Estado no disponible. Reintenta más tarde.</span>';
         document.getElementById('campania-section').style.display = 'none';
       }
@@ -95,10 +96,11 @@
     document.getElementById('wapp-session-init').addEventListener('click', async function() {
       this.disabled = true;
       try {
-        const res = await fetch('/habysupply/wapp-session/init', { method: 'POST' });
+        const res = await fetch('/habysupply/api/wapp-session/init', { method: 'POST' });
         const data = await res.json();
         alert(data.message || (data.success ? 'Sesión iniciándose...' : 'No se pudo iniciar'));
       } catch (err) {
+        console.error('Error al iniciar sesión:', err);
         alert('Error iniciando sesión.');
       }
       this.disabled = false;
@@ -108,10 +110,11 @@
     document.getElementById('wapp-session-close').addEventListener('click', async function() {
       this.disabled = true;
       try {
-        const res = await fetch('/habysupply/wapp-session/close', { method: 'POST' });
+        const res = await fetch('/habysupply/api/wapp-session/close', { method: 'POST' });
         const data = await res.json();
         alert(data.message || (data.success ? 'Sesión cerrada.' : 'No se pudo cerrar'));
       } catch (err) {
+        console.error('Error al cerrar sesión:', err);
         alert('Error cerrando sesión.');
       }
       this.disabled = false;

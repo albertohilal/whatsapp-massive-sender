@@ -142,7 +142,7 @@
       }
       resumen.textContent = 'Cargando destinatarios...';
       try {
-        const res = await fetch(`/habysupply/envios?campania_id=${campaniaId}`);
+        const res = await fetch(`/habysupply/api/envios?campania_id=${campaniaId}`);
         const data = await res.json();
         if (Array.isArray(data)) {
           resumen.textContent = data.length
@@ -153,6 +153,7 @@
           throw new Error('Respuesta no válida');
         }
       } catch (err) {
+        console.error('Error al cargar envíos:', err);
         resumen.textContent = 'Error al obtener los destinatarios.';
         renderEnvios([]);
       }
@@ -200,10 +201,11 @@
         // Obtener destinatarios pendientes
         let envios = [];
         try {
-          const res = await fetch(`/habysupply/envios?campania_id=${campaniaId}`);
+          const res = await fetch(`/habysupply/api/envios?campania_id=${campaniaId}`);
           const data = await res.json();
           envios = Array.isArray(data) ? data.filter(e => e.estado === 'pendiente') : [];
-        } catch {
+        } catch (err) {
+          console.error('Error al obtener destinatarios:', err);
           alert('Error al obtener destinatarios.');
           return;
         }
