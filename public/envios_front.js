@@ -136,6 +136,17 @@ async function cargarLugares() {
     if (cliente_id) params.append('cliente_id', cliente_id);
     if (soloSeleccionados) params.append('solo_seleccionados', '1');
 
+    // Debug: mostrar parámetros enviados
+    console.log('🔍 Parámetros enviados al backend:', {
+      campaniaId,
+      filtroRubro,
+      filtroDireccion,
+      soloValidos,
+      cliente_id,
+      soloSeleccionados,
+      url_completa: `/api/envios/filtrar-prospectos?${params.toString()}`
+    });
+
     // 1. Obtener prospectos disponibles
     const url = `/api/envios/filtrar-prospectos?${params.toString()}`;
     const res = await fetch(url);
@@ -160,9 +171,16 @@ async function cargarLugares() {
 
     const tbody = document.getElementById('tablaProspectos');
     tbody.innerHTML = '';
+    
+    // Debug: verificar duplicados
+    console.log('📊 Lugares recibidos del backend:', lugares.length);
+    console.log('🎯 Lugares:', lugares);
+    console.log('✅ Asignados:', asignados);
+    
     let lugaresFiltrados = lugares;
     if (soloSeleccionados) {
       lugaresFiltrados = lugares.filter(lugar => asignados.includes(String(lugar.id)));
+      console.log('🔍 Lugares después de filtrar por asignados:', lugaresFiltrados.length);
     }
     statusDiv.textContent = `Cargando ${lugaresFiltrados.length} prospectos...`;
 

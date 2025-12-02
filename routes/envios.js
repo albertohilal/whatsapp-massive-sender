@@ -143,10 +143,12 @@ router.get('/filtrar-prospectos', async (req, res) => {
     
   const params = [];
   let sql;
+  let groupByClause = '';
+  
   if (solo_seleccionados === '1' && campania) {
-      // Mostrar solo los lugares asignados a la campaña
+      // Mostrar solo los lugares asignados a la campaña (sin JOIN con clientes para evitar duplicados)
       sql = `
-        SELECT 
+        SELECT DISTINCT
           l.id,
           l.nombre,
           l.direccion,
@@ -155,9 +157,8 @@ router.get('/filtrar-prospectos', async (req, res) => {
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro
         FROM ll_lugares l
         LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-        INNER JOIN ll_lugares_clientes lc ON l.id = lc.lugar_id
         WHERE l.id IN (
-          SELECT lugar_id FROM ll_envios_whatsapp WHERE campania_id = ? AND lugar_id IS NOT NULL
+          SELECT DISTINCT lugar_id FROM ll_envios_whatsapp WHERE campania_id = ? AND lugar_id IS NOT NULL
         )
       `;
       params.push(campania);
@@ -186,29 +187,37 @@ router.get('/filtrar-prospectos', async (req, res) => {
   // const params = []; // Eliminar duplicado
 
 
-    // Filtro por cliente
-    if (cliente_id) {
-      if (solo_seleccionados === '1' && campania) {
-        sql += ' AND lc.cliente_id = ?';
-      } else {
-        sql += ' AND ll_lugares_clientes.cliente_id = ?';
-      }
+    // Filtro por cliente (solo aplicar cuando NO es solo_seleccionados)
+    if (cliente_id && solo_seleccionados !== '1') {
+      sql += ' AND ll_lugares_clientes.cliente_id = ?';
       params.push(cliente_id);
     }
 
     // Filtros dinámicos
     if (rubro && rubro.trim()) {
-      sql += ' AND COALESCE(ll_rubros.nombre_es, \'Sin rubro\') LIKE ?';
+      if (solo_seleccionados === '1' && campania) {
+        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
+      } else {
+        sql += ' AND COALESCE(ll_rubros.nombre_es, \'Sin rubro\') LIKE ?';
+      }
       params.push(`%${rubro.trim()}%`);
     }
 
     if (direccion && direccion.trim()) {
-      sql += ' AND ll_lugares.direccion LIKE ?';
+      if (solo_seleccionados === '1' && campania) {
+        sql += ' AND l.direccion LIKE ?';
+      } else {
+        sql += ' AND ll_lugares.direccion LIKE ?';
+      }
       params.push(`%${direccion.trim()}%`);
     }
 
     if (wapp_valido === '1') {
-      sql += ' AND ll_lugares.wapp_valido = 1';
+      if (solo_seleccionados === '1' && campania) {
+        sql += ' AND l.wapp_valido = 1';
+      } else {
+        sql += ' AND ll_lugares.wapp_valido = 1';
+      }
     }
 
     // Si se especifica una campaña, filtrar por campaña

@@ -7,6 +7,7 @@
 </head>
 <body class="p-4">
   <h1 class="mb-4">Seleccionar Prospectos para Campaña</h1>
+  <div id="usuario-logueado" style="margin-bottom:12px; font-weight: 600; color: #2c5282;"></div>
 
   <div class="mb-3">
     <label for="campaniaSelect" class="form-label">Campaña</label>
@@ -61,7 +62,22 @@
 
   <script src="envios_front.js"></script>
   <script>
+    // Mostrar usuario logueado
+    async function mostrarUsuario() {
+      try {
+        const res = await fetch('/api/usuario-logueado');
+        const data = await res.json();
+        if (data && data.usuario) {
+          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+        }
+      } catch (err) {
+        document.getElementById('usuario-logueado').textContent = '';
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      mostrarUsuario();
+      
       const params = new URLSearchParams(window.location.search);
       const sessionOverride = params.get('session') || params.get('sessionName');
       const link = document.getElementById('volver-form-envios');
