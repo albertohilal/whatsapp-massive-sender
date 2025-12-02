@@ -24,33 +24,74 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Al cambiar campaña, recargar lugares y tildes
   campaniaSelect.addEventListener('change', cargarLugares);
 
-  // Agregar seleccionados a campaña
+  // Guardar edición de prospectos (agregar y quitar)
   document.querySelector('.btn-success').addEventListener('click', async () => {
     const campaniaId = campaniaSelect.value;
     const checkboxes = document.querySelectorAll('#tablaProspectos input[type="checkbox"]:checked');
     const lugaresSeleccionados = Array.from(checkboxes).map(cb => cb.value);
 
-    if (!campaniaId || lugaresSeleccionados.length === 0) {
-      alert('Selecciona una campaña y al menos un prospecto.');
+    // Obtener los lugares ya asignados a la campaña
+    let asignados = [];
+    if (campaniaId) {
+      const resAsignados = await fetch(`/api/envios?campania_id=${campaniaId}`);
+      if (resAsignados.ok) {
+        const envios = await resAsignados.json();
+        asignados = envios.filter(e => e.lugar_id !== undefined && e.lugar_id !== null).map(e => String(e.lugar_id));
+      }
+    }
+
+    // Calcular lugares a agregar y quitar
+    const agregar = lugaresSeleccionados.filter(id => !asignados.includes(id));
+    const quitar = asignados.filter(id => !lugaresSeleccionados.includes(id));
+
+    if (!campaniaId || (agregar.length === 0 && quitar.length === 0)) {
+      alert('Selecciona una campaña y modifica la selección para guardar cambios.');
       return;
     }
 
-    try {
-      const res = await fetch('/api/envios/agregar-a-campania', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaniaId, lugares: lugaresSeleccionados })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('Prospectos agregados correctamente.');
-        await cargarLugares(); // Refrescar la tabla tras guardar
-      } else {
-        alert('Error al agregar prospectos.');
+    let ok = true;
+    let msg = '';
+    // Agregar nuevos seleccionados
+    if (agregar.length > 0) {
+      try {
+        const res = await fetch('/api/envios/agregar-a-campania', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaniaId, lugares: agregar })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          ok = false;
+          msg += 'Error al agregar prospectos. ';
+        }
+      } catch (err) {
+        ok = false;
+        msg += 'Error de conexión al agregar. ';
       }
-    } catch (err) {
-      alert('Error de conexión.');
-      console.error(err);
+    }
+    // Quitar prospectos desasignados
+    if (quitar.length > 0) {
+      try {
+        const res = await fetch('/api/envios/quitar-de-campania', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaniaId, lugares: quitar })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          ok = false;
+          msg += 'Error al quitar prospectos. ';
+        }
+      } catch (err) {
+        ok = false;
+        msg += 'Error de conexión al quitar. ';
+      }
+    }
+    if (ok) {
+      alert('Cambios guardados correctamente.');
+      await cargarLugares();
+    } else {
+      alert(msg || 'Error al guardar cambios.');
     }
   });
 });
@@ -67,14 +108,33 @@ async function cargarLugares() {
   const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
 
   try {
-    let cliente_id = 51; // Cambia dinámicamente según la sesión activa
+    // Obtener datos de usuario logueado
+    let cliente_id = null;
+    let tipo = null;
+    try {
+      const res = await fetch('/api/usuario-logueado');
+      const data = await res.json();
+      if (data && data.usuario) {
+        tipo = data.tipo;
+        cliente_id = data.cliente_id;
+      }
+    } catch {}
+
+    // Si es admin, permitir seleccionar cliente (por selector)
+    if (tipo === 'admin') {
+      const selector = document.getElementById('selectorCliente');
+      if (selector && selector.value) {
+        cliente_id = selector.value;
+      }
+    }
+
     const params = new URLSearchParams();
-  if (campaniaId) params.append('campania', campaniaId);
-  if (filtroRubro) params.append('rubro', filtroRubro);
-  if (filtroDireccion) params.append('direccion', filtroDireccion);
-  if (soloValidos) params.append('wapp_valido', soloValidos);
-  params.append('cliente_id', cliente_id);
-  if (soloSeleccionados) params.append('solo_seleccionados', '1');
+    if (campaniaId) params.append('campania', campaniaId);
+    if (filtroRubro) params.append('rubro', filtroRubro);
+    if (filtroDireccion) params.append('direccion', filtroDireccion);
+    if (soloValidos) params.append('wapp_valido', soloValidos);
+    if (cliente_id) params.append('cliente_id', cliente_id);
+    if (soloSeleccionados) params.append('solo_seleccionados', '1');
 
     // 1. Obtener prospectos disponibles
     const url = `/api/envios/filtrar-prospectos?${params.toString()}`;

@@ -11,7 +11,7 @@
   <p class="subtitle">Consulta las campañas creadas y los destinatarios asignados.</p>
 
   <div class="actions">
-    <a class="btn-link" href="/habysupply/dashboard.html">Volver al panel</a>
+    <a class="btn-link" href="#" id="btn-volver">Volver al panel</a>
     <a class="btn-link" href="/form_campania.html?session=habysupply" target="_blank" rel="noopener">Crear/editar campañas</a>
   </div>
 
@@ -31,6 +31,7 @@
       <select id="selector-campania"></select>
     </div>
     <div id="resumen-envios" class="muted" style="margin-bottom:12px;">Selecciona una campaña para ver sus destinatarios.</div>
+    <button id="btn-enviar-campania" class="btn-link" style="margin-bottom:12px;">Enviar campaña</button>
     <div class="table-wrapper">
       <table>
         <thead>
@@ -175,12 +176,62 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Configurar botón "Volver al panel" para preservar parámetros
+      const btnVolver = document.getElementById('btn-volver');
+      if (btnVolver) {
+        const params = new URLSearchParams(window.location.search);
+        const dashboardUrl = '/habysupply/dashboard.html' + (params.toString() ? '?' + params.toString() : '');
+        btnVolver.href = dashboardUrl;
+      }
+      
       mostrarUsuario();
       cargarCampanias();
       const select = document.getElementById('selector-campania');
       if (select) {
         select.addEventListener('change', e => cargarEnvios(e.target.value));
       }
+      const btnEnviar = document.getElementById('btn-enviar-campania');
+      btnEnviar.addEventListener('click', async () => {
+        const campaniaId = select.value;
+        if (!campaniaId) {
+          alert('Selecciona una campaña.');
+          return;
+        }
+        // Obtener destinatarios pendientes
+        let envios = [];
+        try {
+          const res = await fetch(`/habysupply/envios?campania_id=${campaniaId}`);
+          const data = await res.json();
+          envios = Array.isArray(data) ? data.filter(e => e.estado === 'pendiente') : [];
+        } catch {
+          alert('Error al obtener destinatarios.');
+          return;
+        }
+        if (!envios.length) {
+          alert('No hay destinatarios pendientes para enviar.');
+          return;
+        }
+        // Preparar payload para envío masivo
+        const payload = {
+          envios: envios.map(e => ({ id: e.id, telefono: e.telefono_wapp, texto: e.mensaje_final }))
+        };
+        try {
+          const res = await fetch('/api/generar-envios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.enviados > 0) {
+            alert(`Se enviaron ${result.enviados} mensajes.`);
+            cargarEnvios(campaniaId);
+          } else {
+            alert('No se enviaron mensajes.');
+          }
+        } catch {
+          alert('Error al enviar la campaña.');
+        }
+      });
     });
   </script>
 </body>

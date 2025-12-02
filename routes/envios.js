@@ -1,5 +1,23 @@
 const express = require('express');
 const router = express.Router();
+// Quitar prospectos seleccionados de una campaña
+router.delete('/quitar-de-campania', async (req, res) => {
+  const { campaniaId, lugares } = req.body;
+  if (!campaniaId || !Array.isArray(lugares) || lugares.length === 0) {
+    return res.status(400).json({ success: false, error: 'Datos insuficientes' });
+  }
+  try {
+    const placeholders = lugares.map(() => '?').join(',');
+    await connection.query(
+      `DELETE FROM ll_envios_whatsapp WHERE campania_id = ? AND lugar_id IN (${placeholders})`,
+      [campaniaId, ...lugares]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error al quitar prospectos:', error);
+    res.status(500).json({ success: false, error: 'Error al quitar prospectos' });
+  }
+});
 const connection = require('../db/connection');
 const {
   obtenerEnvios,
@@ -69,19 +87,31 @@ router.post('/agregar-a-campania', async (req, res) => {
         .replace(/{{rubro}}/gi, lugar.rubro || 'Sin rubro')
         .replace(/{{direccion}}/gi, lugar.direccion || '');
 
-      await connection.query(
-        `INSERT INTO ll_envios_whatsapp 
-          (campania_id, telefono_wapp, nombre_destino, mensaje_final, estado, fecha_envio, lugar_id)
-         VALUES (?, ?, ?, ?, 'pendiente', NULL, ?)`,
-        [campaniaId, lugar.telefono_wapp, lugar.nombre, mensajeFinal, lugar.id]
-      );
+      try {
+        await connection.query(
+          `INSERT INTO ll_envios_whatsapp 
+            (campania_id, telefono_wapp, nombre_destino, mensaje_final, estado, fecha_envio, lugar_id)
+           VALUES (?, ?, ?, ?, 'pendiente', NULL, ?)`,
+          [campaniaId, lugar.telefono_wapp, lugar.nombre, mensajeFinal, lugar.id]
+        );
+      } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+          // Si el registro ya existe, ignorar y continuar
+          continue;
+        } else {
+          throw err;
+        }
+      }
     }
 
     res.json({ success: true });
   } catch (error) {
     console.error('❌ Error al agregar prospectos:', error);
-    console.error('❌ Stack trace:', error.stack);
-    res.status(500).json({ success: false, error: 'Error al agregar prospectos' });
+    if (error.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ success: false, error: 'Algunos prospectos ya estaban asignados a la campaña.' });
+    } else {
+      res.status(500).json({ success: false, error: 'Error al agregar prospectos' });
+    }
   }
 });
 
