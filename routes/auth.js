@@ -8,7 +8,11 @@ router.post('/login', authController.login);
 // Endpoint para obtener el usuario logueado
 router.get('/usuario-logueado', (req, res) => {
 	if (req.session && req.session.usuario) {
-		return res.json({ usuario: req.session.usuario });
+		return res.json({ 
+			usuario: req.session.usuario,
+			tipo: req.session.tipo || 'cliente',
+			cliente_id: req.session.cliente_id
+		});
 	}
 	res.json({ usuario: null });
 });

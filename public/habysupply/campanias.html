@@ -31,7 +31,7 @@
       <select id="selector-campania"></select>
     </div>
     <div id="resumen-envios" class="muted" style="margin-bottom:12px;">Selecciona una campaña para ver sus destinatarios.</div>
-    <button id="btn-enviar-campania" class="btn-link" style="margin-bottom:12px;">Enviar campaña</button>
+    <button id="btn-enviar-campania" class="btn-link" style="margin-bottom:12px;display:none;">Enviar campaña</button>
     <div class="table-wrapper">
       <table>
         <thead>
@@ -54,14 +54,34 @@
       try {
         const res = await fetch('/api/usuario-logueado');
         const data = await res.json();
+        console.log('👤 Usuario logueado:', data);
+        
+        const btnEnviar = document.getElementById('btn-enviar-campania');
+        
         if (data && data.usuario) {
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+          
           if (data.tipo === 'admin') {
+            console.log('✅ Usuario es admin, mostrando botón enviar campaña');
             document.getElementById('admin-clientes-selector').style.display = '';
             await cargarClientesSelector();
+            // Mostrar botón enviar campaña solo para admin
+            if (btnEnviar) {
+              btnEnviar.style.display = 'block';
+              console.log('✅ Botón mostrado con display:', btnEnviar.style.display);
+            } else {
+              console.error('❌ No se encontró el botón btn-enviar-campania');
+            }
+          } else {
+            console.log('🚫 Usuario es cliente, ocultando botón enviar campaña');
+            // Ocultar botón enviar campaña para clientes
+            if (btnEnviar) {
+              btnEnviar.style.display = 'none';
+            }
           }
         }
       } catch (err) {
+        console.error('❌ Error al obtener usuario:', err);
         document.getElementById('usuario-logueado').textContent = '';
       }
     }
