@@ -30,6 +30,7 @@
   <div class="actions">
     <a class="btn-link" href="/form_campania.html?session=haby" target="_blank" rel="noopener">Formulario de campañas</a>
     <a class="btn-link" id="btn-prospectos" href="/form_envios.html?session=haby" target="_blank" rel="noopener">Seleccionar prospectos</a>
+    <a class="btn-link" id="btn-programaciones" href="/programaciones.html" target="_blank" rel="noopener">Programar campañas</a>
     <a class="btn-link btn-secondary" href="/haby/campanias.html" target="_blank" rel="noopener">Ver campañas</a>
   </div>
 
@@ -46,6 +47,7 @@
     const clienteIdModoAdmin = params.get('cliente_id') || params.get('cliente');
     const btnVerCampanias = document.querySelector('a.btn-link[href="/haby/campanias.html"]');
     const btnProspectos = document.getElementById('btn-prospectos');
+    const btnProgramaciones = document.getElementById('btn-programaciones');
 
     document.addEventListener('DOMContentLoaded', () => {
       if (btnVerCampanias && modoAdmin && clienteIdModoAdmin) {
@@ -53,6 +55,9 @@
       }
       if (btnProspectos && modoAdmin && clienteIdModoAdmin) {
         btnProspectos.href = `/form_envios.html?session=haby&modo=admin&cliente_id=${clienteIdModoAdmin}&cliente_nombre=${encodeURIComponent(NOMBRE_CLIENTE)}`;
+      }
+      if (btnProgramaciones && modoAdmin && clienteIdModoAdmin) {
+        btnProgramaciones.href = `/programaciones.html?cliente_id=${clienteIdModoAdmin}`;
       }
     });
     async function mostrarUsuario() {
@@ -68,6 +73,9 @@
             }
             if (btnProspectos) {
               btnProspectos.href = `/form_envios.html?session=haby&cliente_id=${data.cliente_id}&cliente_nombre=${encodeURIComponent(NOMBRE_CLIENTE)}`;
+            }
+            if (btnProgramaciones) {
+              btnProgramaciones.href = `/programaciones.html?cliente_id=${data.cliente_id}`;
             }
           }
         }

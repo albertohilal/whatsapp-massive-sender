@@ -87,6 +87,8 @@ const sesionesRoutes = require('./routes/sesiones');
 app.use('/api/sesiones', requireAuth, sesionesRoutes);
 const usuariosRoutes = require('./routes/usuarios');
 app.use('/api/usuarios', requireAdmin, usuariosRoutes);
+const programacionesRoutes = require('./routes/programaciones');
+app.use('/api/programaciones', requireAuth, programacionesRoutes);
 // Servir archivos estáticos de habysupply antes de cualquier router o middleware
 app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysupply')));
 
@@ -104,6 +106,9 @@ app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
+
+const programacionScheduler = require('./services/programacionScheduler');
+programacionScheduler.start();
 
 // Puerto desde .env o por defecto en 3010
 const PORT = process.env.PORT || 3010;
