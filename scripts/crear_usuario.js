@@ -22,6 +22,10 @@ async function crearUsuario(usuario, password, tipo, cliente_id = null) {
       throw new Error('Faltan parámetros: usuario, password y tipo son requeridos');
     }
 
+    if (password.length < 6 || password.length > 13) {
+      throw new Error('La contraseña debe tener entre 6 y 13 caracteres');
+    }
+
     if (!['admin', 'cliente'].includes(tipo)) {
       throw new Error('Tipo debe ser "admin" o "cliente"');
     }
@@ -95,7 +99,8 @@ if (args.length < 3) {
   console.log('\n📝 Ejemplos:');
   console.log('   node scripts/crear_usuario.js b3toh miPassword123 admin');
   console.log('   node scripts/crear_usuario.js habysupply Haby2025! cliente 51');
-  console.log('\n⚠️  El password será hasheado con bcrypt antes de guardarse.\n');
+  console.log('\n⚠️  El password debe tener entre 6 y 13 caracteres.');
+  console.log('⚠️  El password será hasheado con bcrypt antes de guardarse.\n');
   process.exit(1);
 }
 

@@ -277,8 +277,8 @@
 
         <div class="form-group">
           <label for="password">Contraseña <span id="password-opcional"></span></label>
-          <input type="password" id="password">
-          <small>Mínimo 6 caracteres. Será hasheada con bcrypt.</small>
+          <input type="password" id="password" maxlength="13">
+          <small>Entre 6 y 13 caracteres. Será hasheada con bcrypt.</small>
         </div>
 
         <div class="form-group">
@@ -447,8 +447,8 @@
         return;
       }
 
-      if (password && password.length < 6) {
-        alert('La contraseña debe tener al menos 6 caracteres');
+      if (password && (password.length < 6 || password.length > 13)) {
+        alert('La contraseña debe tener entre 6 y 13 caracteres');
         return;
       }
 

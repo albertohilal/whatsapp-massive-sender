@@ -68,6 +68,13 @@ router.post('/', async (req, res) => {
       });
     }
     
+    if (password.length < 6 || password.length > 13) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'La contraseña debe tener entre 6 y 13 caracteres' 
+      });
+    }
+    
     if (!['admin', 'cliente'].includes(tipo)) {
       return res.status(400).json({ 
         ok: false, 
@@ -153,6 +160,13 @@ router.put('/:id', async (req, res) => {
     }
     
     if (password) {
+      if (password.length < 6 || password.length > 13) {
+        conn.release();
+        return res.status(400).json({ 
+          ok: false, 
+          error: 'La contraseña debe tener entre 6 y 13 caracteres' 
+        });
+      }
       const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
       updates.push('password_hash = ?');
       values.push(password_hash);
