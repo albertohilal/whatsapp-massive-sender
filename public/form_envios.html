@@ -89,10 +89,15 @@
       }
 
       let clienteNombre = params.get('cliente_nombre');
+      const sessionNameMap = {
+        haby: 'Haby',
+        habysupply: 'Habysupply',
+        marketing: 'Marketing'
+      };
       if (!clienteNombre && userData?.tipo === 'cliente' && userData.usuario) {
         clienteNombre = userData.usuario;
-      } else if (!clienteNombre && sessionOverride === 'haby') {
-        clienteNombre = 'Haby';
+      } else if (!clienteNombre && sessionOverride && sessionNameMap[sessionOverride]) {
+        clienteNombre = sessionNameMap[sessionOverride];
       }
       if (clienteNombre) {
         const clienteActual = document.getElementById('cliente-actual');
