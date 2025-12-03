@@ -40,6 +40,7 @@
   </section>
 
   <script>
+    const NOMBRE_CLIENTE = 'Haby';
     const params = new URLSearchParams(window.location.search);
     const modoAdmin = params.get('modo') === 'admin';
     const clienteIdModoAdmin = params.get('cliente_id') || params.get('cliente');
@@ -51,7 +52,7 @@
         btnVerCampanias.href = `/haby/campanias.html?modo=admin&cliente_id=${clienteIdModoAdmin}`;
       }
       if (btnProspectos && modoAdmin && clienteIdModoAdmin) {
-        btnProspectos.href = `/form_envios.html?session=haby&modo=admin&cliente_id=${clienteIdModoAdmin}`;
+        btnProspectos.href = `/form_envios.html?session=haby&modo=admin&cliente_id=${clienteIdModoAdmin}&cliente_nombre=${encodeURIComponent(NOMBRE_CLIENTE)}`;
       }
     });
     async function mostrarUsuario() {
@@ -66,7 +67,7 @@
               btnVerCampanias.href = `/haby/campanias.html?cliente_id=${data.cliente_id}`;
             }
             if (btnProspectos) {
-              btnProspectos.href = `/form_envios.html?session=haby&cliente_id=${data.cliente_id}`;
+              btnProspectos.href = `/form_envios.html?session=haby&cliente_id=${data.cliente_id}&cliente_nombre=${encodeURIComponent(NOMBRE_CLIENTE)}`;
             }
           }
         }

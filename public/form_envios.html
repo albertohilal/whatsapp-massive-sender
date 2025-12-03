@@ -8,6 +8,7 @@
 <body class="p-4">
   <h1 class="mb-4">Seleccionar Prospectos para Campaña</h1>
   <div id="usuario-logueado" style="margin-bottom:12px; font-weight: 600; color: #2c5282;"></div>
+  <div id="cliente-actual" style="margin-bottom:8px; color:#4a5568;"></div>
 
   <div class="mb-3">
     <label for="campaniaSelect" class="form-label">Campaña</label>
@@ -69,20 +70,35 @@
         const data = await res.json();
         if (data && data.usuario) {
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+          return data;
         }
       } catch (err) {
         document.getElementById('usuario-logueado').textContent = '';
       }
+      return null;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      mostrarUsuario();
+    document.addEventListener('DOMContentLoaded', async () => {
+      const userData = await mostrarUsuario();
       
       const params = new URLSearchParams(window.location.search);
       const sessionOverride = params.get('session') || params.get('sessionName');
       const link = document.getElementById('volver-form-envios');
       if (link && sessionOverride === 'habysupply') {
         link.href = '/habysupply/dashboard.html';
+      }
+
+      let clienteNombre = params.get('cliente_nombre');
+      if (!clienteNombre && userData?.tipo === 'cliente' && userData.usuario) {
+        clienteNombre = userData.usuario;
+      } else if (!clienteNombre && sessionOverride === 'haby') {
+        clienteNombre = 'Haby';
+      }
+      if (clienteNombre) {
+        const clienteActual = document.getElementById('cliente-actual');
+        if (clienteActual) {
+          clienteActual.textContent = `Cliente: ${clienteNombre}`;
+        }
       }
     });
   </script>
