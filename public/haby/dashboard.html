@@ -29,7 +29,7 @@
   </div>
   <div class="actions">
     <a class="btn-link" href="/form_campania.html?session=haby" target="_blank" rel="noopener">Formulario de campañas</a>
-    <a class="btn-link" href="/form_envios.html?session=haby" target="_blank" rel="noopener">Seleccionar prospectos</a>
+    <a class="btn-link" id="btn-prospectos" href="/form_envios.html?session=haby" target="_blank" rel="noopener">Seleccionar prospectos</a>
     <a class="btn-link btn-secondary" href="/haby/campanias.html" target="_blank" rel="noopener">Ver campañas</a>
   </div>
 
@@ -44,10 +44,14 @@
     const modoAdmin = params.get('modo') === 'admin';
     const clienteIdModoAdmin = params.get('cliente_id') || params.get('cliente');
     const btnVerCampanias = document.querySelector('a.btn-link[href="/haby/campanias.html"]');
+    const btnProspectos = document.getElementById('btn-prospectos');
 
     document.addEventListener('DOMContentLoaded', () => {
       if (btnVerCampanias && modoAdmin && clienteIdModoAdmin) {
         btnVerCampanias.href = `/haby/campanias.html?modo=admin&cliente_id=${clienteIdModoAdmin}`;
+      }
+      if (btnProspectos && modoAdmin && clienteIdModoAdmin) {
+        btnProspectos.href = `/form_envios.html?session=haby&modo=admin&cliente_id=${clienteIdModoAdmin}`;
       }
     });
     async function mostrarUsuario() {
@@ -57,8 +61,13 @@
         if (data && data.usuario) {
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
           // Si es un cliente en modo normal, pasar su cliente_id en el enlace
-          if (!modoAdmin && btnVerCampanias && data.cliente_id) {
-            btnVerCampanias.href = `/haby/campanias.html?cliente_id=${data.cliente_id}`;
+          if (!modoAdmin && data.cliente_id) {
+            if (btnVerCampanias) {
+              btnVerCampanias.href = `/haby/campanias.html?cliente_id=${data.cliente_id}`;
+            }
+            if (btnProspectos) {
+              btnProspectos.href = `/form_envios.html?session=haby&cliente_id=${data.cliente_id}`;
+            }
           }
         }
       } catch (err) {

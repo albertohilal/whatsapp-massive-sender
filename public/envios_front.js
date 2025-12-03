@@ -1,9 +1,17 @@
+const urlParams = new URLSearchParams(window.location.search);
+let clienteIdOverride = urlParams.get('cliente_id') || urlParams.get('cliente') || null;
+const modoAdminParam = urlParams.get('modo') === 'admin';
+
 document.addEventListener('DOMContentLoaded', async () => {
 
   // Cargar campañas
   const campaniaSelect = document.getElementById('campaniaSelect');
   try {
-    const res = await fetch('/api/campanias');
+    let campaniasUrl = '/api/campanias';
+    if (clienteIdOverride) {
+      campaniasUrl += `?cliente_id=${clienteIdOverride}`;
+    }
+    const res = await fetch(campaniasUrl);
     const campanias = await res.json();
     campanias.forEach(c => {
       const option = document.createElement('option');
@@ -121,10 +129,16 @@ async function cargarLugares() {
     } catch {}
 
     // Si es admin, permitir seleccionar cliente (por selector)
+    if (clienteIdOverride) {
+      cliente_id = clienteIdOverride;
+    }
+
     if (tipo === 'admin') {
       const selector = document.getElementById('selectorCliente');
       if (selector && selector.value) {
         cliente_id = selector.value;
+      } else if (clienteIdOverride) {
+        cliente_id = clienteIdOverride;
       }
     }
 
