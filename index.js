@@ -6,7 +6,24 @@ const app = express();
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 
+
 const session = require('express-session');
+let RedisStore;
+let redisClient;
+let sessionStore;
+try {
+  RedisStore = require('connect-redis')(session);
+  const { createClient } = require('redis');
+  redisClient = createClient({
+    legacyMode: true,
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+  redisClient.connect().catch(console.error);
+  sessionStore = new RedisStore({ client: redisClient });
+  console.log('Redis configurado como store de sesiones.');
+} catch (e) {
+  console.warn('Redis no está disponible, usando store en memoria.');
+}
 
 // Asegurarse de que en producción exista una SESSION_SECRET
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
@@ -15,7 +32,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
 }
 
 app.use(session({
-  // No usar value por defecto en producción — debe venir de .env
+  store: sessionStore,
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false, // evitar crear sesiones vacías
@@ -39,6 +56,7 @@ app.use(cors());
 app.use(express.json());
 const habysupplyRouter = require('./routes/habysupply');
 const adminRouter = require('./routes/admin');
+const marketingRouter = require('./routes/marketing');
 // Middleware de logging para debug
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
@@ -71,8 +89,9 @@ app.use('/api/usuarios', requireAdmin, usuariosRoutes);
 app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysupply')));
 
 // Resto de middlewares y routers
-// Solo rutas API para /habysupply, no archivos estáticos
+// Solo rutas API para /habysupply y /marketing, no archivos estáticos
 app.use('/habysupply/api', requireAuth, habysupplyRouter);
+app.use('/marketing', requireAuth, marketingRouter);
 app.use('/admin', requireAuth, adminRouter);
 
 // Servir archivos estáticos sin sobrescribir la ruta principal

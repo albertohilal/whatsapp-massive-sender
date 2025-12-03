@@ -112,12 +112,9 @@
     document.getElementById('btn-ir-panel').addEventListener('click', function() {
       const select = document.getElementById('select-cliente');
       let clienteId = select.value;
-      // Forzar Haby a 51 si el nombre es Haby
-      if (select.options[select.selectedIndex].text === 'Haby') {
-        clienteId = 51;
-      }
-      if (clienteId) {
-        window.location.href = `/habysupply/dashboard.html?cliente=${clienteId}&modo=admin`;
+      let clienteNombre = select.options[select.selectedIndex].text.toLowerCase();
+      if (clienteId && clienteNombre) {
+        window.location.href = `/${clienteNombre}/dashboard.html?cliente=${clienteId}&modo=admin`;
       }
     });
   </script>
