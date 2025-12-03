@@ -81,15 +81,24 @@
         if (data && data.status) {
           const ok = data.status === 'conectado';
           statusDiv.innerHTML = `<span class="${ok ? 'status-ok' : 'status-off'}">${data.status}</span>`;
-          document.getElementById('campania-section').style.display = ok ? '' : 'none';
+          const campaniaSection = document.getElementById('campania-section');
+          if (campaniaSection) {
+            campaniaSection.style.display = ok ? '' : 'none';
+          }
         } else {
           statusDiv.innerHTML = '<span class="status-off">desconectado</span>';
-          document.getElementById('campania-section').style.display = 'none';
+          const campaniaSection = document.getElementById('campania-section');
+          if (campaniaSection) {
+            campaniaSection.style.display = 'none';
+          }
         }
       } catch (err) {
         console.error('Error al cargar estado:', err);
         statusDiv.innerHTML = '<span class="status-off">Estado no disponible. Reintenta más tarde.</span>';
-        document.getElementById('campania-section').style.display = 'none';
+        const campaniaSection = document.getElementById('campania-section');
+        if (campaniaSection) {
+          campaniaSection.style.display = 'none';
+        }
       }
     }
 
