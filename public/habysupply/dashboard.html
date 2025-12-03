@@ -47,7 +47,7 @@
       const clienteId = params.get('cliente');
       const btnVerCampanias = document.querySelector('a.btn-link[href="/habysupply/campanias.html"]');
       if (btnVerCampanias && modoAdmin && clienteId) {
-        btnVerCampanias.href = `/habysupply/campanias.html?modo=admin&cliente=${clienteId}`;
+        btnVerCampanias.href = `/habysupply/campanias.html?modo=admin&cliente_id=${clienteId}`;
       }
     });
     async function mostrarUsuario() {

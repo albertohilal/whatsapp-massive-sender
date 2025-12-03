@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Campañas Marketing</title>
+  <link rel="stylesheet" href="/habysupply/style.css">
+</head>
+<body>
+  <h1>Campañas - Marketing</h1>
+  <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
+  <div id="campanias-list"></div>
+  <script>
+    async function mostrarUsuario() {
+      try {
+        const res = await fetch('/api/usuario-logueado');
+        const data = await res.json();
+        if (data && data.usuario) {
+          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+        }
+      } catch (err) {
+        document.getElementById('usuario-logueado').textContent = '';
+      }
+    }
+    mostrarUsuario();
+    async function cargarCampanias() {
+      try {
+        const res = await fetch('/marketing/campanias');
+        const campanias = await res.json();
+        const cont = document.getElementById('campanias-list');
+        if (campanias.length === 0) {
+          cont.innerHTML = '<p>No hay campañas registradas.</p>';
+        } else {
+          cont.innerHTML = campanias.map(c => `<div><strong>${c.nombre}</strong> - Estado: ${c.estado}</div>`).join('');
+        }
+      } catch (err) {
+        document.getElementById('campanias-list').innerHTML = '<p>Error al cargar campañas.</p>';
+      }
+    }
+    cargarCampanias();
+  </script>
+</body>
+</html>

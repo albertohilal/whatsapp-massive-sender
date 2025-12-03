@@ -11,10 +11,14 @@ router.get('/', async (req, res) => {
       // Si es cliente, solo ve sus campañas
       sql += ' WHERE cliente_id = ?';
       params.push(req.session.cliente_id);
-    } else if (req.session?.tipo === 'admin' && req.query.cliente_id) {
+    } else if (req.session?.tipo === 'admin') {
+      const clienteId = req.query.cliente_id || req.query.cliente;
+      // Los paneles antiguos enviaban ?cliente=, así que aceptamos ambos parámetros
+      if (clienteId) {
       // Si es admin y pasa cliente_id, filtra por ese cliente
-      sql += ' WHERE cliente_id = ?';
-      params.push(req.query.cliente_id);
+        sql += ' WHERE cliente_id = ?';
+        params.push(clienteId);
+      }
     }
     const [rows] = await connection.query(sql, params);
     res.json(rows);

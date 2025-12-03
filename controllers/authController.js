@@ -25,8 +25,17 @@ module.exports = {
       req.session.cliente_id = user.cliente_id;
       // Redirigir según tipo de usuario
   let redirect = '/';
-  if (user.tipo === 'admin') redirect = '/admin/dashboard.html';
-  else if (user.tipo === 'cliente') redirect = '/habysupply/dashboard.html';
+  if (user.tipo === 'admin') {
+    redirect = '/admin/dashboard.html';
+  } else if (user.tipo === 'cliente') {
+    if (user.usuario.toLowerCase() === 'haby') {
+      redirect = '/haby/dashboard.html';
+    } else if (user.usuario.toLowerCase() === 'habysupply') {
+      redirect = '/habysupply/dashboard.html';
+    } else {
+      redirect = `/public/${user.usuario.toLowerCase()}/dashboard.html`;
+    }
+  }
       return res.json({ ok: true, redirect });
     } catch (err) {
       res.status(500).json({ ok: false, error: 'Error en el servidor', details: err.message });

@@ -30,8 +30,21 @@ async function crearUsuario(usuario, password, tipo, cliente_id = null) {
       throw new Error('Tipo debe ser "admin" o "cliente"');
     }
 
+
     if (tipo === 'cliente' && !cliente_id) {
       throw new Error('Para tipo "cliente" se requiere cliente_id');
+    }
+    // Verificar si ya existe un usuario con ese cliente_id
+    if (tipo === 'cliente') {
+      const connCheck = await pool.getConnection();
+      const [clienteDuplicado] = await connCheck.query(
+        'SELECT id, usuario FROM ll_usuarios WHERE tipo = "cliente" AND cliente_id = ?',
+        [cliente_id]
+      );
+      connCheck.release();
+      if (clienteDuplicado.length > 0 && clienteDuplicado[0].usuario !== usuario) {
+        throw new Error(`Ya existe un usuario tipo cliente con cliente_id ${cliente_id}: ${clienteDuplicado[0].usuario}`);
+      }
     }
 
     console.log(`\n🔐 Creando usuario: ${usuario}`);

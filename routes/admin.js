@@ -7,7 +7,14 @@ const pool = require('../db/connection');
 router.get('/api/clientes', async (req, res) => {
   try {
     const conn = await pool.getConnection();
-    const [rows] = await conn.query("SELECT id, usuario AS nombre FROM ll_usuarios WHERE tipo='cliente' ORDER BY usuario");
+    // Tomar el cliente_id real asociado al usuario de tipo cliente
+    const [rows] = await conn.query(`
+      SELECT cliente_id AS id, usuario AS nombre
+      FROM ll_usuarios
+      WHERE tipo='cliente'
+        AND cliente_id IS NOT NULL
+      ORDER BY usuario
+    `);
     conn.release();
     res.json(rows);
   } catch (err) {

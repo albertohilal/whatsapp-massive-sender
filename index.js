@@ -12,7 +12,7 @@ let RedisStore;
 let redisClient;
 let sessionStore;
 try {
-  RedisStore = require('connect-redis')(session);
+  const { RedisStore } = require('connect-redis');
   const { createClient } = require('redis');
   redisClient = createClient({
     legacyMode: true,
@@ -23,6 +23,7 @@ try {
   console.log('Redis configurado como store de sesiones.');
 } catch (e) {
   console.warn('Redis no está disponible, usando store en memoria.');
+  console.error('Error de conexión a Redis:', e);
 }
 
 // Asegurarse de que en producción exista una SESSION_SECRET
@@ -57,6 +58,7 @@ app.use(express.json());
 const habysupplyRouter = require('./routes/habysupply');
 const adminRouter = require('./routes/admin');
 const marketingRouter = require('./routes/marketing');
+const habyRouter = require('./routes/haby');
 // Middleware de logging para debug
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
@@ -92,6 +94,7 @@ app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysu
 // Solo rutas API para /habysupply y /marketing, no archivos estáticos
 app.use('/habysupply/api', requireAuth, habysupplyRouter);
 app.use('/marketing', requireAuth, marketingRouter);
+app.use('/haby', requireAuth, habyRouter);
 app.use('/admin', requireAuth, adminRouter);
 
 // Servir archivos estáticos sin sobrescribir la ruta principal

@@ -83,9 +83,10 @@ module.exports = {
   listCampanias: async (req, res) => {
     const pool = require('../db/connection');
     let clienteId;
-    // Si es admin, puede pasar cliente_id por querystring
-    if (req.session?.tipo === 'admin' && req.query.cliente_id) {
-      clienteId = parseInt(req.query.cliente_id, 10);
+    // Si es admin, aceptar tanto cliente_id como cliente (versiones anteriores usan cliente)
+    const queryCliente = req.query.cliente_id || req.query.cliente;
+    if (req.session?.tipo === 'admin' && queryCliente) {
+      clienteId = parseInt(queryCliente, 10);
     } else {
       clienteId = req.session?.cliente_id || 51;
     }
@@ -148,9 +149,13 @@ module.exports = {
     const campaniaId = req.query.campania_id;
     let clienteId;
     // Si es admin, puede pasar cliente_id por querystring
-    if (req.session?.tipo === 'admin' && req.query.cliente_id) {
-      clienteId = parseInt(req.query.cliente_id, 10);
-    } else {
+    if (req.session?.tipo === 'admin') {
+      const queryCliente = req.query.cliente_id || req.query.cliente;
+      if (queryCliente) {
+        clienteId = parseInt(queryCliente, 10);
+      }
+    }
+    if (!clienteId) {
       clienteId = req.session?.cliente_id || 51;
     }
 

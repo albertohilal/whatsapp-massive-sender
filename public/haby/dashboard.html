@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Marketing - WhatsApp Massive Sender</title>
+  <title>Haby - WhatsApp Massive Sender</title>
   <link rel="stylesheet" href="/habysupply/style.css">
 </head>
 <body>
-  <h1>Marketing</h1>
+  <h1>Haby</h1>
   <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
   <p class="subtitle">Sigue estos pasos para dejar tus campañas listas y permitir que el administrador realice los envíos.</p>
 
@@ -28,9 +28,9 @@
     <button id="wapp-session-close" class="btn-danger">Cerrar sesión</button>
   </div>
   <div class="actions">
-    <a class="btn-link" href="/form_campania.html?session=marketing" target="_blank" rel="noopener">Formulario de campañas</a>
-    <a class="btn-link" href="/form_envios.html?session=marketing" target="_blank" rel="noopener">Seleccionar prospectos</a>
-    <a class="btn-link btn-secondary" href="/marketing/campanias.html" target="_blank" rel="noopener">Ver campañas</a>
+    <a class="btn-link" href="/form_campania.html?session=haby" target="_blank" rel="noopener">Formulario de campañas</a>
+    <a class="btn-link" href="/form_envios.html?session=haby" target="_blank" rel="noopener">Seleccionar prospectos</a>
+    <a class="btn-link btn-secondary" href="/haby/campanias.html" target="_blank" rel="noopener">Ver campañas</a>
   </div>
 
   <section class="card">
@@ -40,13 +40,14 @@
   </section>
 
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const modoAdmin = params.get('modo') === 'admin';
+    const clienteIdModoAdmin = params.get('cliente_id') || params.get('cliente');
+    const btnVerCampanias = document.querySelector('a.btn-link[href="/haby/campanias.html"]');
+
     document.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const modoAdmin = params.get('modo') === 'admin';
-      const clienteId = params.get('cliente');
-      const btnVerCampanias = document.querySelector('a.btn-link[href="/marketing/campanias.html"]');
-      if (btnVerCampanias && modoAdmin && clienteId) {
-        btnVerCampanias.href = `/marketing/campanias.html?modo=admin&cliente_id=${clienteId}`;
+      if (btnVerCampanias && modoAdmin && clienteIdModoAdmin) {
+        btnVerCampanias.href = `/haby/campanias.html?modo=admin&cliente_id=${clienteIdModoAdmin}`;
       }
     });
     async function mostrarUsuario() {
@@ -55,6 +56,10 @@
         const data = await res.json();
         if (data && data.usuario) {
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+          // Si es un cliente en modo normal, pasar su cliente_id en el enlace
+          if (!modoAdmin && btnVerCampanias && data.cliente_id) {
+            btnVerCampanias.href = `/haby/campanias.html?cliente_id=${data.cliente_id}`;
+          }
         }
       } catch (err) {
         document.getElementById('usuario-logueado').textContent = '';
@@ -63,7 +68,7 @@
     mostrarUsuario();
     async function cargarCampanias() {
       try {
-        const res = await fetch('/marketing/campanias');
+        const res = await fetch('/haby/campanias');
         await res.json();
       } catch (err) {}
     }
@@ -71,7 +76,7 @@
       const statusDiv = document.getElementById('wapp-session-status');
       statusDiv.textContent = 'Consultando estado...';
       try {
-        const res = await fetch('/marketing/api/wapp-session');
+        const res = await fetch('/haby/api/wapp-session');
         const data = await res.json();
         if (data && data.status) {
           const ok = data.status === 'conectado';
@@ -99,7 +104,7 @@
     document.getElementById('wapp-session-init').addEventListener('click', async function() {
       this.disabled = true;
       try {
-        const res = await fetch('/marketing/api/wapp-session/init', { method: 'POST' });
+        const res = await fetch('/haby/api/wapp-session/init', { method: 'POST' });
         const data = await res.json();
         alert(data.message || (data.success ? 'Sesión iniciándose...' : 'No se pudo iniciar'));
       } catch (err) {
@@ -112,7 +117,7 @@
     document.getElementById('wapp-session-close').addEventListener('click', async function() {
       this.disabled = true;
       try {
-        const res = await fetch('/marketing/api/wapp-session/close', { method: 'POST' });
+        const res = await fetch('/haby/api/wapp-session/close', { method: 'POST' });
         const data = await res.json();
         alert(data.message || (data.success ? 'Sesión cerrada.' : 'No se pudo cerrar'));
       } catch (err) {
