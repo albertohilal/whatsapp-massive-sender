@@ -17,16 +17,12 @@ const ensureCliente = (req, res, next) => {
 // Solo proteger rutas bajo /api, no archivos estáticos
 router.use((req, res, next) => {
   if (req.baseUrl.endsWith('/api')) {
-    if (req.method === 'POST' && req.path === '/login') {
-      return next();
-    }
     return ensureCliente(req, res, next);
   }
   next();
 });
 
-// Login opcional para panel independiente
-router.post('/login', habysupplyController.login);
+// Login ahora es centralizado en /api/login (authController)
 // Dashboard
 router.get('/dashboard', habysupplyController.dashboard);
 // Campañas

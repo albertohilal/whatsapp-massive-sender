@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Usuarios - Admin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #218838;
+    }
+    .btn-warning {
+      background: #ffc107;
+      color: #333;
+    }
+    .btn-warning:hover {
+      background: #e0a800;
+    }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c82333;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 12px;
+      margin: 0 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+    tr:hover {
+      background: #f5f5f5;
+    }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-admin {
+      background: #667eea;
+      color: white;
+    }
+    .badge-cliente {
+      background: #28a745;
+      color: white;
+    }
+    .badge-activo {
+      background: #28a745;
+      color: white;
+    }
+    .badge-inactivo {
+      background: #dc3545;
+      color: white;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal.show {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h2 {
+      color: #333;
+    }
+    .close {
+      font-size: 28px;
+      font-weight: bold;
+      color: #999;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+    .close:hover {
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+      font-weight: 500;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .form-group small {
+      display: block;
+      margin-top: 5px;
+      color: #666;
+      font-size: 12px;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+    .checkbox-group input {
+      width: auto;
+      margin-right: 8px;
+    }
+    .actions {
+      white-space: nowrap;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>👥 Gestión de Usuarios</h1>
+        <p style="color: #666;">Usuario: <strong id="usuario-logueado"></strong></p>
+      </div>
+      <div>
+        <button class="btn btn-success" onclick="abrirModalCrear()">+ Crear Usuario</button>
+        <a href="/admin/dashboard.html" class="btn btn-secondary">← Volver al Panel</a>
+      </div>
+    </div>
+
+    <div id="loading" class="loading">
+      Cargando usuarios...
+    </div>
+
+    <table id="tabla-usuarios" style="display: none;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Tipo</th>
+          <th>Cliente ID</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-usuarios">
+      </tbody>
+    </table>
+
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <p>📭 No hay usuarios registrados</p>
+      <button class="btn btn-success" onclick="abrirModalCrear()">Crear primer usuario</button>
+    </div>
+  </div>
+
+  <!-- Modal Crear/Editar Usuario -->
+  <div id="modal-usuario" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-titulo">Crear Usuario</h2>
+        <button class="close" onclick="cerrarModal()">&times;</button>
+      </div>
+      <form id="form-usuario" onsubmit="guardarUsuario(event)">
+        <input type="hidden" id="usuario-id">
+        
+        <div class="form-group">
+          <label for="usuario">Usuario *</label>
+          <input type="text" id="usuario" required>
+          <small>Nombre de usuario único</small>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña <span id="password-opcional"></span></label>
+          <input type="password" id="password">
+          <small>Mínimo 6 caracteres. Será hasheada con bcrypt.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="tipo">Tipo *</label>
+          <select id="tipo" required onchange="toggleClienteId()">
+            <option value="">Seleccionar...</option>
+            <option value="admin">Administrador</option>
+            <option value="cliente">Cliente</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="grupo-cliente-id" style="display: none;">
+          <label for="cliente_id">Cliente ID *</label>
+          <input type="number" id="cliente_id">
+          <small>ID del cliente (requerido para tipo "cliente")</small>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="activo" checked>
+            <label for="activo">Usuario activo</label>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-success">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let modoEdicion = false;
+    let usuarioEditandoId = null;
+
+    // Cargar usuario logueado
+    async function cargarUsuarioLogueado() {
+      try {
+        const res = await fetch('/api/usuario-logueado');
+        const data = await res.json();
+        if (data.usuario) {
+          document.getElementById('usuario-logueado').textContent = data.usuario;
+        }
+      } catch (error) {
+        console.error('Error al cargar usuario:', error);
+      }
+    }
+
+    // Cargar lista de usuarios
+    async function cargarUsuarios() {
+      try {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('tabla-usuarios').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'none';
+
+        const res = await fetch('/api/usuarios');
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error);
+        }
+
+        const tbody = document.getElementById('tbody-usuarios');
+        tbody.innerHTML = '';
+
+        if (data.usuarios.length === 0) {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('empty-state').style.display = 'block';
+          return;
+        }
+
+        data.usuarios.forEach(usuario => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${usuario.id}</td>
+            <td><strong>${usuario.usuario}</strong></td>
+            <td><span class="badge badge-${usuario.tipo}">${usuario.tipo}</span></td>
+            <td>${usuario.cliente_id || '-'}</td>
+            <td><span class="badge badge-${usuario.activo ? 'activo' : 'inactivo'}">${usuario.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td>${new Date(usuario.created_at).toLocaleDateString()}</td>
+            <td class="actions">
+              <button class="btn btn-warning btn-small" onclick="editarUsuario(${usuario.id})">✏️ Editar</button>
+              ${usuario.activo ? 
+                `<button class="btn btn-danger btn-small" onclick="eliminarUsuario(${usuario.id}, '${usuario.usuario}')">🗑️ Desactivar</button>` :
+                `<button class="btn btn-success btn-small" onclick="activarUsuario(${usuario.id})">✅ Activar</button>`
+              }
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('tabla-usuarios').style.display = 'table';
+      } catch (error) {
+        console.error('Error al cargar usuarios:', error);
+        alert('Error al cargar usuarios: ' + error.message);
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    // Abrir modal para crear
+    function abrirModalCrear() {
+      modoEdicion = false;
+      usuarioEditandoId = null;
+      document.getElementById('modal-titulo').textContent = 'Crear Usuario';
+      document.getElementById('form-usuario').reset();
+      document.getElementById('usuario-id').value = '';
+      document.getElementById('password').required = true;
+      document.getElementById('password-opcional').textContent = '*';
+      document.getElementById('activo').checked = true;
+      document.getElementById('grupo-cliente-id').style.display = 'none';
+      document.getElementById('modal-usuario').classList.add('show');
+    }
+
+    // Editar usuario
+    async function editarUsuario(id) {
+      try {
+        const res = await fetch(`/api/usuarios/${id}`);
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error);
+        }
+
+        const usuario = data.usuario;
+        modoEdicion = true;
+        usuarioEditandoId = id;
+        
+        document.getElementById('modal-titulo').textContent = 'Editar Usuario';
+        document.getElementById('usuario-id').value = usuario.id;
+        document.getElementById('usuario').value = usuario.usuario;
+        document.getElementById('password').value = '';
+        document.getElementById('password').required = false;
+        document.getElementById('password-opcional').textContent = '(dejar vacío para no cambiar)';
+        document.getElementById('tipo').value = usuario.tipo;
+        document.getElementById('cliente_id').value = usuario.cliente_id || '';
+        document.getElementById('activo').checked = usuario.activo === 1;
+        
+        toggleClienteId();
+        document.getElementById('modal-usuario').classList.add('show');
+      } catch (error) {
+        console.error('Error al cargar usuario:', error);
+        alert('Error al cargar usuario: ' + error.message);
+      }
+    }
+
+    // Guardar usuario (crear o actualizar)
+    async function guardarUsuario(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('usuario-id').value;
+      const usuario = document.getElementById('usuario').value;
+      const password = document.getElementById('password').value;
+      const tipo = document.getElementById('tipo').value;
+      const cliente_id = document.getElementById('cliente_id').value;
+      const activo = document.getElementById('activo').checked;
+
+      // Validaciones
+      if (tipo === 'cliente' && !cliente_id) {
+        alert('Para tipo "cliente" se requiere Cliente ID');
+        return;
+      }
+
+      if (!modoEdicion && !password) {
+        alert('La contraseña es requerida para crear un usuario');
+        return;
+      }
+
+      if (password && password.length < 6) {
+        alert('La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+
+      const body = {
+        usuario,
+        tipo,
+        cliente_id: cliente_id || null,
+        activo
+      };
+
+      if (password) {
+        body.password = password;
+      }
+
+      try {
+        const url = modoEdicion ? `/api/usuarios/${id}` : '/api/usuarios';
+        const method = modoEdicion ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error);
+        }
+
+        alert(data.message);
+        cerrarModal();
+        cargarUsuarios();
+      } catch (error) {
+        console.error('Error al guardar usuario:', error);
+        alert('Error al guardar usuario: ' + error.message);
+      }
+    }
+
+    // Eliminar usuario (desactivar)
+    async function eliminarUsuario(id, usuario) {
+      if (!confirm(`¿Estás seguro de desactivar el usuario "${usuario}"?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/usuarios/${id}`, {
+          method: 'DELETE'
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error);
+        }
+
+        alert(data.message);
+        cargarUsuarios();
+      } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+        alert('Error al eliminar usuario: ' + error.message);
+      }
+    }
+
+    // Activar usuario
+    async function activarUsuario(id) {
+      try {
+        const res = await fetch(`/api/usuarios/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ activo: true })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error(data.error);
+        }
+
+        alert(data.message);
+        cargarUsuarios();
+      } catch (error) {
+        console.error('Error al activar usuario:', error);
+        alert('Error al activar usuario: ' + error.message);
+      }
+    }
+
+    // Cerrar modal
+    function cerrarModal() {
+      document.getElementById('modal-usuario').classList.remove('show');
+    }
+
+    // Toggle campo Cliente ID según tipo
+    function toggleClienteId() {
+      const tipo = document.getElementById('tipo').value;
+      const grupoClienteId = document.getElementById('grupo-cliente-id');
+      const clienteIdInput = document.getElementById('cliente_id');
+      
+      if (tipo === 'cliente') {
+        grupoClienteId.style.display = 'block';
+        clienteIdInput.required = true;
+      } else {
+        grupoClienteId.style.display = 'none';
+        clienteIdInput.required = false;
+        clienteIdInput.value = '';
+      }
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modal-usuario').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cerrarModal();
+      }
+    });
+
+    // Inicializar
+    cargarUsuarioLogueado();
+    cargarUsuarios();
+  </script>
+</body>
+</html>
