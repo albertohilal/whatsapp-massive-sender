@@ -12,15 +12,14 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecretkey',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false }
+  cookie: { 
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+  }
 }));
 
-const requireAuth = (req, res, next) => {
-  if (req.session && req.session.usuario) {
-    return next();
-  }
-  return res.status(401).json({ ok: false, error: 'No autenticado' });
-};
+// Importar middlewares de autenticación
+const { requireAuth, requireAdmin, requireCliente } = require('./middleware/requireAuth');
 
 // Iniciar cliente de WhatsApp
 const { iniciarCliente } = require('./bot/whatsapp_instance');
@@ -44,7 +43,7 @@ app.use('/api/campanias', requireAuth, campaniasRoutes);
 const enviosRoutes = require('./routes/envios');
 app.use('/api/envios', requireAuth, enviosRoutes);
 const generarEnviosRoutes = require('./routes/generar_envios');
-app.use('/api/generar-envios', requireAuth, generarEnviosRoutes);
+app.use('/api/generar-envios', requireAdmin, generarEnviosRoutes);
 const lugaresRoutes = require('./routes/lugares');
 app.use('/api/lugares', requireAuth, lugaresRoutes);
 const rubrosRoutes = require('./routes/rubros');

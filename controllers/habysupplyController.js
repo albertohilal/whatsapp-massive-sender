@@ -75,17 +75,7 @@ module.exports = {
     }
     res.json({ success: false, message: 'No hay sesión activa.' });
   },
-  login: (req, res) => {
-    // Autenticación básica (ejemplo)
-    const { usuario, password } = req.body;
-    if (usuario === 'habysupply' && password === 'tu_clave_segura') {
-      req.session.usuario = usuario;
-      req.session.tipo = 'cliente';
-      req.session.cliente_id = 51;
-      return res.json({ ok: true });
-    }
-    res.status(401).json({ ok: false, error: 'Credenciales incorrectas' });
-  },
+  // Login removido - ahora se usa authController centralizado
   dashboard: (req, res) => {
     // Renderizar dashboard (placeholder)
     res.sendFile('dashboard.html', { root: 'public/habysupply' });

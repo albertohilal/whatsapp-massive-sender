@@ -5,6 +5,27 @@ const authController = require('../controllers/authController');
 
 router.post('/login', authController.login);
 
+// Endpoint para cerrar sesión
+router.post('/logout', (req, res) => {
+	if (req.session) {
+		req.session.destroy((err) => {
+			if (err) {
+				return res.status(500).json({ 
+					ok: false, 
+					error: 'Error al cerrar sesión' 
+				});
+			}
+			res.clearCookie('connect.sid'); // Limpiar cookie de sesión
+			return res.json({ 
+				ok: true, 
+				message: 'Sesión cerrada exitosamente' 
+			});
+		});
+	} else {
+		res.json({ ok: true, message: 'No había sesión activa' });
+	}
+});
+
 // Endpoint para obtener el usuario logueado
 router.get('/usuario-logueado', (req, res) => {
 	if (req.session && req.session.usuario) {
