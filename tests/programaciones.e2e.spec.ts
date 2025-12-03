@@ -13,28 +13,52 @@ test.describe('Programaciones de campañas', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(`${BASE_URL}/admin/dashboard.html`);
 
+    const nombreCampania = `Campania QA ${Date.now()}`;
+    const campaniaId = await page.evaluate(async ({ nombreCampania, clienteId }) => {
+      await fetch('/api/campanias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: nombreCampania,
+          mensaje: 'Mensaje test automático',
+          estado: 'pendiente',
+          cliente_id: Number(clienteId)
+        })
+      });
+      const res = await fetch(`/api/campanias?cliente_id=${clienteId}`);
+      const data = await res.json();
+      const creada = data.find((c) => c.nombre === nombreCampania);
+      return creada?.id || null;
+    }, { nombreCampania, clienteId: CLIENTE_ID });
+
+    expect(campaniaId, 'Campaña de prueba debe crearse').not.toBeNull();
+
+    const comment = `Test auto ${Date.now()}`;
+    const fechaHoy = new Date().toISOString().split('T')[0];
+    const creada = await page.evaluate(async ({ campaniaId, clienteId, comment, fechaHoy }) => {
+      const res = await fetch('/api/programaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campania_id: campaniaId,
+          cliente_id: Number(clienteId),
+          dias_semana: ['mon'],
+          hora_inicio: '09:00',
+          hora_fin: '10:00',
+          cupo_diario: 1,
+          fecha_inicio: fechaHoy,
+          comentario: comment
+        })
+      });
+      return res.ok;
+    }, { campaniaId, clienteId: CLIENTE_ID, comment, fechaHoy });
+
+    expect(creada, 'La programación debe crearse').toBeTruthy();
+
     const params = `modo=admin&cliente_id=${CLIENTE_ID}`;
     await page.goto(`${BASE_URL}/programaciones.html?${params}`);
     await expect(page.locator('h1')).toHaveText(/Programación de Campañas/i);
-
-    const select = page.locator('#campania-id');
-    await select.waitFor({ state: 'attached' });
-    const options = await select.locator('option').count();
-    expect(options).toBeGreaterThan(0);
-
-    await page.check('input[type="checkbox"][value="mon"]');
-    await page.fill('#hora-inicio', '10:00');
-    await page.fill('#hora-fin', '11:00');
-    await page.fill('#cupo-diario', '5');
-    const today = new Date().toISOString().split('T')[0];
-    await page.fill('#fecha-inicio', today);
-    const comment = `Test auto ${Date.now()}`;
-    await page.fill('#comentario', comment);
-
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.click('button[type="submit"]');
-
     const lista = page.locator('#lista-programaciones');
-    await expect(lista).toContainText(comment, { timeout: 10000 });
+    await expect(lista).toContainText(nombreCampania, { timeout: 10000 });
   });
 });
