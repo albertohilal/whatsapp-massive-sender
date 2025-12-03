@@ -57,7 +57,7 @@
         btnProspectos.href = `/form_envios.html?session=haby&modo=admin&cliente_id=${clienteIdModoAdmin}&cliente_nombre=${encodeURIComponent(NOMBRE_CLIENTE)}`;
       }
       if (btnProgramaciones && modoAdmin && clienteIdModoAdmin) {
-        btnProgramaciones.href = `/programaciones.html?cliente_id=${clienteIdModoAdmin}`;
+        btnProgramaciones.href = `/programaciones.html?modo=admin&cliente_id=${clienteIdModoAdmin}`;
       }
     });
     async function mostrarUsuario() {
