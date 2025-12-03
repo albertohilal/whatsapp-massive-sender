@@ -10,6 +10,10 @@
   <div id="usuario-logueado" class="usuario-header" style="margin-bottom:12px;"></div>
   <div id="campanias-list"></div>
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const modoAdmin = params.get('modo') === 'admin';
+    const clienteIdOverride = params.get('cliente_id') || params.get('cliente');
+
     async function mostrarUsuario() {
       try {
         const res = await fetch('/api/usuario-logueado');
@@ -22,12 +26,17 @@
       }
     }
     mostrarUsuario();
+
     async function cargarCampanias() {
       try {
-        const res = await fetch('/marketing/campanias');
+        let url = '/marketing/campanias';
+        if (modoAdmin && clienteIdOverride) {
+          url += `?cliente_id=${clienteIdOverride}`;
+        }
+        const res = await fetch(url);
         const campanias = await res.json();
         const cont = document.getElementById('campanias-list');
-        if (campanias.length === 0) {
+        if (!Array.isArray(campanias) || campanias.length === 0) {
           cont.innerHTML = '<p>No hay campañas registradas.</p>';
         } else {
           cont.innerHTML = campanias.map(c => `<div><strong>${c.nombre}</strong> - Estado: ${c.estado}</div>`).join('');

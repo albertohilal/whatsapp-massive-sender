@@ -40,13 +40,14 @@
   </section>
 
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const modoAdmin = params.get('modo') === 'admin';
+    const clienteIdParam = params.get('cliente_id') || params.get('cliente');
+    const btnVerCampanias = document.querySelector('a.btn-link[href="/marketing/campanias.html"]');
+
     document.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const modoAdmin = params.get('modo') === 'admin';
-      const clienteId = params.get('cliente');
-      const btnVerCampanias = document.querySelector('a.btn-link[href="/marketing/campanias.html"]');
-      if (btnVerCampanias && modoAdmin && clienteId) {
-        btnVerCampanias.href = `/marketing/campanias.html?modo=admin&cliente_id=${clienteId}`;
+      if (btnVerCampanias && modoAdmin && clienteIdParam) {
+        btnVerCampanias.href = `/marketing/campanias.html?modo=admin&cliente_id=${clienteIdParam}`;
       }
     });
     async function mostrarUsuario() {
@@ -55,6 +56,9 @@
         const data = await res.json();
         if (data && data.usuario) {
           document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+          if (!modoAdmin && data.cliente_id && btnVerCampanias) {
+            btnVerCampanias.href = `/marketing/campanias.html?cliente_id=${data.cliente_id}`;
+          }
         }
       } catch (err) {
         document.getElementById('usuario-logueado').textContent = '';
