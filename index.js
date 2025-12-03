@@ -8,12 +8,21 @@ const authRoutes = require('./routes/auth');
 
 const session = require('express-session');
 
+// Asegurarse de que en producción exista una SESSION_SECRET
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET no está definido en producción. Defínelo en .env');
+  process.exit(1);
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'supersecretkey',
+  // No usar value por defecto en producción — debe venir de .env
+  secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
-  cookie: { 
-    secure: false,
+  saveUninitialized: false, // evitar crear sesiones vacías
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS en producción
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 horas
   }
 }));
