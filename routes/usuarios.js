@@ -15,9 +15,7 @@ router.get('/', async (req, res) => {
         usuario, 
         tipo, 
         cliente_id, 
-        activo,
-        created_at,
-        updated_at
+        activo
       FROM ll_usuarios 
       ORDER BY tipo DESC, usuario ASC
     `);
@@ -40,9 +38,7 @@ router.get('/:id', async (req, res) => {
         usuario, 
         tipo, 
         cliente_id, 
-        activo,
-        created_at,
-        updated_at
+        activo
       FROM ll_usuarios 
       WHERE id = ?
     `, [id]);

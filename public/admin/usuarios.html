@@ -246,7 +246,6 @@
           <th>Tipo</th>
           <th>Cliente ID</th>
           <th>Estado</th>
-          <th>Creado</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -360,7 +359,6 @@
             <td><span class="badge badge-${usuario.tipo}">${usuario.tipo}</span></td>
             <td>${usuario.cliente_id || '-'}</td>
             <td><span class="badge badge-${usuario.activo ? 'activo' : 'inactivo'}">${usuario.activo ? 'Activo' : 'Inactivo'}</span></td>
-            <td>${new Date(usuario.created_at).toLocaleDateString()}</td>
             <td class="actions">
               <button class="btn btn-warning btn-small" onclick="editarUsuario(${usuario.id})">✏️ Editar</button>
               ${usuario.activo ? 
