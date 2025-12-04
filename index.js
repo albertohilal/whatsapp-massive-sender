@@ -6,6 +6,16 @@ const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
 const winston = require('winston');
+winston.configure({
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  ]
+});
 const helmet = require('helmet');
 const authRoutes = require('./routes/auth');
 
@@ -56,7 +66,9 @@ const { iniciarCliente } = require('./bot/whatsapp_instance');
 // El cliente de WhatsApp solo se inicia bajo demanda por endpoint
 
 // Middlewares
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [process.env.CORS_ORIGIN || 'https://tudominio.com']
   : ['http://localhost:3010'];
