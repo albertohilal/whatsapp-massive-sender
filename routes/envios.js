@@ -139,14 +139,64 @@ router.get('/filtrar-prospectos', async (req, res) => {
     const [tables] = await connection.query("SHOW TABLES LIKE 'll_%'");
     console.log('📋 Tablas encontradas:', tables);
     
-  const { campania, rubro, direccion, wapp_valido, cliente_id, solo_seleccionados } = req.query;
-    
-  const params = [];
-  let sql;
-  let groupByClause = '';
+    const { 
+      campania, 
+      rubro, 
+      direccion, 
+      wapp_valido, 
+      cliente_id, 
+      solo_seleccionados,
+      estado
+    } = req.query;
+
+    const estadoFiltro = (estado || '').trim().toLowerCase();
+    const rubroFiltro = rubro && rubro.trim();
+    const direccionFiltro = direccion && direccion.trim();
+    const params = [];
+    let sql;
   
-  if (solo_seleccionados === '1' && campania) {
-      // Mostrar solo los lugares asignados a la campaña (sin JOIN con clientes para evitar duplicados)
+    const requiereEstado = estadoFiltro === 'pendiente' || estadoFiltro === 'enviado';
+    const soloSeleccionadosActivos = solo_seleccionados === '1';
+
+    if (requiereEstado) {
+      if (!campania) {
+        return res.status(400).send('Debe seleccionar una campaña para filtrar por estado.');
+      }
+      sql = `
+        SELECT 
+          l.id,
+          l.nombre,
+          l.direccion,
+          l.telefono_wapp,
+          l.wapp_valido,
+          COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
+          e.estado
+        FROM ll_envios_whatsapp e
+        INNER JOIN ll_lugares l ON e.lugar_id = l.id
+        LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+        LEFT JOIN ll_campanias_whatsapp camp ON camp.id = e.campania_id
+        WHERE e.campania_id = ?
+          AND e.estado = ?
+      `;
+      params.push(campania, estadoFiltro);
+
+      if (cliente_id) {
+        sql += ' AND camp.cliente_id = ?';
+        params.push(cliente_id);
+      }
+      if (rubroFiltro) {
+        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
+        params.push(`%${rubroFiltro}%`);
+      }
+      if (direccionFiltro) {
+        sql += ' AND l.direccion LIKE ?';
+        params.push(`%${direccionFiltro}%`);
+      }
+      if (wapp_valido === '1') {
+        sql += ' AND l.wapp_valido = 1';
+      }
+      sql += ' ORDER BY l.nombre';
+    } else if (soloSeleccionadosActivos && campania) {
       sql = `
         SELECT DISTINCT
           l.id,
@@ -154,16 +204,35 @@ router.get('/filtrar-prospectos', async (req, res) => {
           l.direccion,
           l.telefono_wapp,
           l.wapp_valido,
-          COALESCE(r.nombre_es, 'Sin rubro') AS rubro
-        FROM ll_lugares l
+          COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
+          e.estado
+        FROM ll_envios_whatsapp e
+        INNER JOIN ll_lugares l ON e.lugar_id = l.id
         LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-        WHERE l.id IN (
-          SELECT DISTINCT lugar_id FROM ll_envios_whatsapp WHERE campania_id = ? AND lugar_id IS NOT NULL
-        )
+        LEFT JOIN ll_campanias_whatsapp camp ON camp.id = e.campania_id
+        WHERE e.campania_id = ?
       `;
       params.push(campania);
+
+      if (cliente_id) {
+        sql += ' AND camp.cliente_id = ?';
+        params.push(cliente_id);
+      }
+      if (rubroFiltro) {
+        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
+        params.push(`%${rubroFiltro}%`);
+      }
+      if (direccionFiltro) {
+        sql += ' AND l.direccion LIKE ?';
+        params.push(`%${direccionFiltro}%`);
+      }
+      if (wapp_valido === '1') {
+        sql += ' AND l.wapp_valido = 1';
+      }
+      sql += ' ORDER BY l.nombre';
+    } else if (soloSeleccionadosActivos) {
+      return res.status(400).send('Debe seleccionar una campaña para ver los prospectos asignados.');
     } else {
-      // Consulta base - excluir lugares que tengan envíos en estado 'enviado' o 'pendiente'
       sql = `
         SELECT 
           ll_lugares.id,
@@ -171,7 +240,8 @@ router.get('/filtrar-prospectos', async (req, res) => {
           ll_lugares.direccion,
           ll_lugares.telefono_wapp,
           ll_lugares.wapp_valido,
-          COALESCE(ll_rubros.nombre_es, 'Sin rubro') AS rubro
+          COALESCE(ll_rubros.nombre_es, 'Sin rubro') AS rubro,
+          'sin_envio' AS estado
         FROM ll_lugares
         LEFT JOIN ll_rubros ON ll_lugares.rubro_id = ll_rubros.id
         INNER JOIN ll_lugares_clientes ON ll_lugares.id = ll_lugares_clientes.lugar_id
@@ -182,57 +252,22 @@ router.get('/filtrar-prospectos', async (req, res) => {
           AND (estado = 'enviado' OR estado = 'pendiente')
         )
       `;
-    }
 
-  // const params = []; // Eliminar duplicado
-
-
-    // Filtro por cliente (solo aplicar cuando NO es solo_seleccionados)
-    if (cliente_id && solo_seleccionados !== '1') {
-      sql += ' AND ll_lugares_clientes.cliente_id = ?';
-      params.push(cliente_id);
-    }
-
-    // Filtros dinámicos
-    if (rubro && rubro.trim()) {
-      if (solo_seleccionados === '1' && campania) {
-        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
-      } else {
+      if (cliente_id) {
+        sql += ' AND ll_lugares_clientes.cliente_id = ?';
+        params.push(cliente_id);
+      }
+      if (rubroFiltro) {
         sql += ' AND COALESCE(ll_rubros.nombre_es, \'Sin rubro\') LIKE ?';
+        params.push(`%${rubroFiltro}%`);
       }
-      params.push(`%${rubro.trim()}%`);
-    }
-
-    if (direccion && direccion.trim()) {
-      if (solo_seleccionados === '1' && campania) {
-        sql += ' AND l.direccion LIKE ?';
-      } else {
+      if (direccionFiltro) {
         sql += ' AND ll_lugares.direccion LIKE ?';
+        params.push(`%${direccionFiltro}%`);
       }
-      params.push(`%${direccion.trim()}%`);
-    }
-
-    if (wapp_valido === '1') {
-      if (solo_seleccionados === '1' && campania) {
-        sql += ' AND l.wapp_valido = 1';
-      } else {
+      if (wapp_valido === '1') {
         sql += ' AND ll_lugares.wapp_valido = 1';
       }
-    }
-
-    // Si se especifica una campaña, filtrar por campaña
-    // Note: This filter might not be needed for prospect selection since we're showing available prospects
-    // Commenting out the campaign filter for now as it causes SQL errors
-    /*
-    if (campania && campania.trim()) {
-      // Campaign filtering logic would go here
-      // But for prospect selection, we typically show all available prospects
-    }
-    */
-
-    if (solo_seleccionados === '1' && campania) {
-      sql += ' ORDER BY l.nombre';
-    } else {
       sql += ' ORDER BY ll_lugares.nombre';
     }
 

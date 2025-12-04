@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Cargar campañas
   const campaniaSelect = document.getElementById('campaniaSelect');
+  const filtroEstadoSelect = document.getElementById('filtroEstado');
+  const soloSeleccionadosInput = document.getElementById('filtroSeleccionados');
   try {
     let campaniasUrl = '/api/campanias';
     if (clienteIdOverride) {
@@ -21,6 +23,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   } catch (err) {
     console.error('Error cargando campañas:', err);
+  }
+
+  if (filtroEstadoSelect && !filtroEstadoSelect.value) {
+    filtroEstadoSelect.value = 'sin_envio';
+  }
+
+  if (soloSeleccionadosInput && filtroEstadoSelect) {
+    soloSeleccionadosInput.addEventListener('change', () => {
+      if (soloSeleccionadosInput.checked && filtroEstadoSelect.value === 'sin_envio') {
+        filtroEstadoSelect.value = '';
+      } else if (!soloSeleccionadosInput.checked && !filtroEstadoSelect.value) {
+        filtroEstadoSelect.value = 'sin_envio';
+      }
+    });
   }
 
   // Cargar lugares al inicio
@@ -120,6 +136,7 @@ async function cargarLugares() {
   const filtroDireccion = document.getElementById('filtroDireccion')?.value?.toLowerCase() || '';
   const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
   const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
+  const filtroEstado = document.getElementById('filtroEstado')?.value || '';
 
   try {
     // Obtener datos de usuario logueado
@@ -155,6 +172,7 @@ async function cargarLugares() {
     if (soloValidos) params.append('wapp_valido', soloValidos);
     if (cliente_id) params.append('cliente_id', cliente_id);
     if (soloSeleccionados) params.append('solo_seleccionados', '1');
+    if (filtroEstado) params.append('estado', filtroEstado);
 
     // Debug: mostrar parámetros enviados
     console.log('🔍 Parámetros enviados al backend:', {
@@ -164,6 +182,7 @@ async function cargarLugares() {
       soloValidos,
       cliente_id,
       soloSeleccionados,
+      filtroEstado,
       url_completa: `/api/envios/filtrar-prospectos?${params.toString()}`
     });
 
@@ -181,13 +200,16 @@ async function cargarLugares() {
     // 2. Obtener prospectos ya asignados a la campaña
     let asignados = [];
     if (campaniaId) {
-      const resAsignados = await fetch(`/api/envios?campania_id=${campaniaId}`);
+      const resAsignados = await fetch(`/api/envios/envios/campania/${campaniaId}`);
       if (resAsignados.ok) {
         const envios = await resAsignados.json();
         // Solo agregar si existe lugar_id
-        asignados = envios.filter(e => e.lugar_id !== undefined && e.lugar_id !== null).map(e => String(e.lugar_id));
+        asignados = envios
+          .filter(e => e.lugar_id !== undefined && e.lugar_id !== null)
+          .map(e => String(e.lugar_id));
       }
     }
+    const asignadosSet = new Set(asignados);
 
     const tbody = document.getElementById('tablaProspectos');
     tbody.innerHTML = '';
@@ -199,7 +221,7 @@ async function cargarLugares() {
     
     let lugaresFiltrados = lugares;
     if (soloSeleccionados) {
-      lugaresFiltrados = lugares.filter(lugar => asignados.includes(String(lugar.id)));
+      lugaresFiltrados = lugares.filter(lugar => asignadosSet.has(String(lugar.id)));
       console.log('🔍 Lugares después de filtrar por asignados:', lugaresFiltrados.length);
     }
     statusDiv.textContent = `Cargando ${lugaresFiltrados.length} prospectos...`;
@@ -219,7 +241,7 @@ async function cargarLugares() {
       checkbox.type = 'checkbox';
       checkbox.value = lugar.id;
       // Marcar con tilde si ya está asignado
-      if (asignados.includes(String(lugar.id))) {
+      if (asignadosSet.has(String(lugar.id))) {
         checkbox.checked = true;
       }
       tdSelect.appendChild(checkbox);
@@ -235,15 +257,28 @@ async function cargarLugares() {
       // Dirección
       const tdDireccion = document.createElement('td');
       tdDireccion.textContent = lugar.direccion;
+      // Estado
+      const tdEstado = document.createElement('td');
+      const estadoValor = (lugar.estado || 'sin_envio').toLowerCase();
+      const estadoTexto = {
+        pendiente: 'Pendiente',
+        enviado: 'Enviado',
+        sin_envio: 'Disponible'
+      }[estadoValor] || 'Desconocido';
+      const estadoPill = document.createElement('span');
+      estadoPill.className = `estado-pill ${estadoValor}`;
+      estadoPill.textContent = estadoTexto;
+      tdEstado.appendChild(estadoPill);
       tr.appendChild(tdSelect);
       tr.appendChild(tdNombre);
       tr.appendChild(tdTelefono);
       tr.appendChild(tdRubro);
       tr.appendChild(tdDireccion);
+      tr.appendChild(tdEstado);
       tbody.appendChild(tr);
     });
 
-    statusDiv.textContent = `✅ ${lugares.length} prospectos cargados exitosamente`;
+    statusDiv.textContent = `✅ ${lugaresFiltrados.length} prospectos cargados exitosamente`;
     statusDiv.className = 'alert alert-success mb-3';
     setTimeout(() => {
       statusDiv.style.display = 'none';
