@@ -30,7 +30,7 @@
     button.type = 'button';
     button.textContent = 'Volver al dashboard';
     button.style.position = 'fixed';
-    button.style.bottom = '24px';
+    button.style.top = '24px';
     button.style.right = '24px';
     button.style.zIndex = '9999';
     button.style.padding = '10px 18px';
@@ -72,4 +72,3 @@
 
   document.addEventListener('DOMContentLoaded', initDashboardButton);
 })();
-

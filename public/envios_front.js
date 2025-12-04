@@ -33,7 +33,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   campaniaSelect.addEventListener('change', cargarLugares);
 
   // Guardar edición de prospectos (agregar y quitar)
-  document.querySelector('.btn-success').addEventListener('click', async () => {
+  const agregarBtn = document.getElementById('agregarSeleccionadosBtn');
+  if (!agregarBtn) {
+    console.error('No se encontró el botón para agregar seleccionados.');
+    return;
+  }
+
+  agregarBtn.addEventListener('click', async () => {
     const campaniaId = campaniaSelect.value;
     const checkboxes = document.querySelectorAll('#tablaProspectos input[type="checkbox"]:checked');
     const lugaresSeleccionados = Array.from(checkboxes).map(cb => cb.value);
