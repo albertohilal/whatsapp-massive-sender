@@ -1,9 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const rateLimit = require('express-rate-limit');
+
+const loginLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutos
+	max: 10, // máximo 10 intentos por IP
+	message: {
+		ok: false,
+		error: 'Demasiados intentos de login. Intenta nuevamente en 15 minutos.'
+	},
+	standardHeaders: true,
+	legacyHeaders: false,
+});
 
 
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 
 // Endpoint para cerrar sesión
 router.post('/logout', (req, res) => {

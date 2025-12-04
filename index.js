@@ -4,6 +4,9 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const cors = require('cors');
+const morgan = require('morgan');
+const winston = require('winston');
+const helmet = require('helmet');
 const authRoutes = require('./routes/auth');
 
 
@@ -20,7 +23,7 @@ try {
   });
   redisClient.connect().catch(console.error);
   sessionStore = new RedisStore({ client: redisClient });
-  console.log('Redis configurado como store de sesiones.');
+  winston.info('Redis configurado como store de sesiones.');
 } catch (e) {
   console.warn('Redis no está disponible, usando store en memoria.');
   console.error('Error de conexión a Redis:', e);
@@ -53,17 +56,22 @@ const { iniciarCliente } = require('./bot/whatsapp_instance');
 // El cliente de WhatsApp solo se inicia bajo demanda por endpoint
 
 // Middlewares
-app.use(cors());
+app.use(helmet());
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.CORS_ORIGIN || 'https://tudominio.com']
+  : ['http://localhost:3010'];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 app.use(express.json());
 const habysupplyRouter = require('./routes/habysupply');
 const adminRouter = require('./routes/admin');
 const marketingRouter = require('./routes/marketing');
 const habyRouter = require('./routes/haby');
 // Middleware de logging para debug
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
+// Logging profesional
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Rutas API y paneles antes de archivos estáticos y ruta principal
 app.use('/api', authRoutes);
@@ -113,5 +121,5 @@ programacionScheduler.start();
 // Puerto desde .env o por defecto en 3010
 const PORT = process.env.PORT || 3010;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  winston.info(`Servidor corriendo en http://localhost:${PORT}`);
 });
