@@ -42,20 +42,5 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usuario, password })
-        });
+        <script src="/login.js" defer></script>
         const data = await res.json();
-        if (data.ok) {
-          window.location.href = data.redirect;
-        } else {
-          throw new Error(data.error || data.details || 'Credenciales incorrectas');
-        }
-      } catch (err) {
-        errorBox.textContent = err.message || 'No se pudo iniciar sesión. Intenta nuevamente.';
-        errorBox.style.display = 'block';
-      }
-    });
-  </script>
-
-  <!-- Eliminado dashboard_link.js para evitar botones en login -->
-</body>
-</html>
