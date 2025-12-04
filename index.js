@@ -16,8 +16,12 @@ winston.configure({
     })
   ]
 });
+
 const helmet = require('helmet');
 const authRoutes = require('./routes/auth');
+
+// Seguridad: headers seguros con Helmet
+app.use(helmet());
 
 
 const session = require('express-session');
