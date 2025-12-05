@@ -34,10 +34,12 @@ async function controlarProceso(processName, accion) {
 async function cargarEstado() {
   const res = await fetch('/pm2/status');
   const data = await res.json();
+  console.log('📊 Datos PM2 recibidos:', data);
   const contenedor = document.getElementById("estado");
   contenedor.innerHTML = data.map(proc => {
     const isOnline = proc.pm2_env.status === 'online';
     const statusColor = isOnline ? 'green' : 'red';
+    console.log(`🔧 Procesando: ${proc.name}, online: ${isOnline}`);
     return `
       <tr>
         <td>${proc.name}</td>
@@ -53,6 +55,7 @@ async function cargarEstado() {
       </tr>
     `;
   }).join('');
+  console.log('✅ HTML generado y asignado al contenedor');
 }
 
 async function mostrarUsuario() {

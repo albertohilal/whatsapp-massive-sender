@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inicio - WhatsApp Massive Sender</title>
-  <script src="/dashboard.js?v=2.0" defer></script>
+  <script src="/dashboard.js?v=2.1" defer></script>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
@@ -25,6 +25,11 @@
   <section class="card">
     <h2>Estado del servicio</h2>
     <p class="muted">Controla cada proceso de forma individual desde la tabla. Usa los botones de cada fila para iniciar, detener o reiniciar.</p>
+    <div class="actions">
+      <button onclick="ejecutarAccion('start')">▶ Iniciar whatsapp-massive</button>
+      <button onclick="ejecutarAccion('stop')">⏹ Detener whatsapp-massive</button>
+      <button onclick="ejecutarAccion('restart')">🔄 Reiniciar whatsapp-massive</button>
+    </div>
     <table>
       <thead>
         <tr>
