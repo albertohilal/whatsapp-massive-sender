@@ -86,12 +86,13 @@ router.get('/campanias', async (req, res) => {
 // Estado de sesión WhatsApp
 router.get('/api/wapp-session', async (req, res) => {
   if (!habyClientWrapper) {
-    return res.json({ status: 'desconectado', qr: null });
+    return res.json({ status: 'desconectado', qr: null, hasQR: false });
   }
   
   const response = {
     status: habyClientWrapper.status,
-    qr: lastQRCode // Incluir QR si está disponible
+    qr: lastQRCode, // Incluir QR si está disponible
+    hasQR: !!lastQRCode
   };
   
   // Log para debug
@@ -100,6 +101,37 @@ router.get('/api/wapp-session', async (req, res) => {
   }
   
   res.json(response);
+});
+
+// Endpoint para obtener el QR como imagen
+router.get('/api/wapp-session/qr-image', async (req, res) => {
+  if (!lastQRCode) {
+    return res.status(404).send('QR no disponible');
+  }
+  
+  try {
+    // Generar QR usando qrcode library
+    const QRCode = require('qrcode');
+    const qrDataURL = await QRCode.toDataURL(lastQRCode, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    
+    // Convertir data URL a buffer
+    const base64Data = qrDataURL.replace(/^data:image\/png;base64,/, '');
+    const imgBuffer = Buffer.from(base64Data, 'base64');
+    
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(imgBuffer);
+  } catch (err) {
+    console.error('Error generando imagen QR:', err);
+    res.status(500).send('Error generando QR');
+  }
 });
 
 // Iniciar sesión WhatsApp

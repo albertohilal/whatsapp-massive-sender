@@ -66,20 +66,21 @@ async function cargarEstadoSesion() {
       statusDiv.innerHTML = `<span class="${ok ? 'status-ok' : 'status-off'}">${data.status}</span>`;
       
       // Mostrar QR si está disponible
-      if (data.qr) {
-        console.log('✅ QR recibido del servidor:', data.qr.substring(0, 50) + '...');
+      if (data.hasQR || data.qr) {
+        console.log('✅ QR disponible en el servidor');
         const qrDiv = document.getElementById('qr-container');
         if (qrDiv) {
-          // Usar Google Charts API directamente (sin problemas CORS)
+          // Usar endpoint del servidor para obtener la imagen del QR
+          const timestamp = Date.now(); // Para evitar caché
           qrDiv.innerHTML = `
             <div style="margin-top: 15px; padding: 20px; background: #f0f0f0; border-radius: 8px; text-align: center;">
               <p style="margin-bottom: 15px; font-weight: bold; color: #25D366; font-size: 18px;">📱 Escanea este QR con WhatsApp:</p>
               <div style="display: inline-block; padding: 15px; background: white; border: 3px solid #25D366; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <img src="https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encodeURIComponent(data.qr)}&choe=UTF-8" 
+                <img src="/haby/api/wapp-session/qr-image?t=${timestamp}" 
                      alt="QR Code WhatsApp" 
-                     style="display: block; width: 280px; height: 280px;"
+                     style="display: block; width: 300px; height: 300px;"
                      onload="console.log('✅ QR image loaded successfully')"
-                     onerror="console.error('❌ Error loading QR image')"/>
+                     onerror="console.error('❌ Error loading QR image'); this.src='/haby/api/wapp-session/qr-image?t=' + Date.now();"/>
               </div>
               <p style="margin-top: 10px; font-size: 14px; color: #666;">El QR se renueva cada 20 segundos</p>
             </div>
