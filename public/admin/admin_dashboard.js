@@ -38,6 +38,8 @@ async function cargarEstado() {
   contenedor.innerHTML = data.map(proc => {
     const isOnline = proc.pm2_env.status === 'online';
     const statusColor = isOnline ? 'green' : 'red';
+    const disableStart = isOnline ? 'disabled' : '';
+    const disableStopRestart = !isOnline ? 'disabled' : '';
     return `
     <tr>
       <td>${proc.name}</td>
@@ -46,9 +48,9 @@ async function cargarEstado() {
       <td>${proc.pm2_env.restart_time}</td>
       <td>${proc.pm2_env.pm_uptime ? new Date(proc.pm2_env.pm_uptime).toLocaleString() : ''}</td>
       <td>
-        <button onclick="controlarProceso('${proc.name}', 'start')" ${isOnline ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;margin:2px">▶ Iniciar</button>
-        <button onclick="controlarProceso('${proc.name}', 'stop')" ${!isOnline ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;margin:2px">⏹ Detener</button>
-        <button onclick="controlarProceso('${proc.name}', 'restart')" ${!isOnline ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;margin:2px">🔄 Reiniciar</button>
+        <button data-process="${proc.name}" data-action="start" ${disableStart} style="padding:4px 8px;font-size:12px;margin:2px">▶ Iniciar</button>
+        <button data-process="${proc.name}" data-action="stop" ${disableStopRestart} style="padding:4px 8px;font-size:12px;margin:2px">⏹ Detener</button>
+        <button data-process="${proc.name}" data-action="restart" ${disableStopRestart} style="padding:4px 8px;font-size:12px;margin:2px">🔄 Reiniciar</button>
       </td>
     </tr>
     `;
@@ -70,6 +72,13 @@ window.onload = function() {
   const btnIniciarSesion = document.getElementById('btn-iniciar-sesion');
   if (btnIniciarSesion) btnIniciarSesion.addEventListener('click', iniciarSesion);
 };
+
+document.addEventListener('click', event => {
+  const button = event.target.closest('button[data-process][data-action]');
+  if (!button) return;
+  const { process, action } = button.dataset;
+  controlarProceso(process, action);
+});
 
 window.controlarProceso = controlarProceso;
 
