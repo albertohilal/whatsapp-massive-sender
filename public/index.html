@@ -1,33 +1,118 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhatsApp Massive Sender - Inicio</title>
+  <title>DDW - Desarrollo y Diseño Web</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .portal-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .portal-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .portal-body {
+      padding: 3rem 2rem;
+    }
+    .feature-box {
+      text-align: center;
+      padding: 2rem 1rem;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .feature-box:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(102,126,234,0.2);
+    }
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .btn-portal {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      padding: 1rem 3rem;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+    }
+    .btn-portal:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102,126,234,0.6);
+      color: white;
+    }
+  </style>
 </head>
-<body class="bg-light">
-  <div class="container py-5">
-    <div class="text-center mb-5">
-      <h1 class="display-5 fw-bold">WhatsApp Massive Sender</h1>
-      <p class="lead">Bienvenido. Selecciona una opción para comenzar:</p>
-    </div>
+<body>
+  <div class="container">
     <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="list-group">
-          <a href="form_campania.html" class="list-group-item list-group-item-action">Gestión de Campañas</a>
-          <a href="form_envios.html" class="list-group-item list-group-item-action">Formulario de Envíos</a>
-          <a href="form_envios_pendientes.html" class="list-group-item list-group-item-action">Enviar Pendientes</a>
-          <a href="lugares.html" class="list-group-item list-group-item-action">Gestión de Lugares</a>
+      <div class="col-lg-10 col-xl-8">
+        <div class="portal-card">
+          <div class="portal-header">
+            <h1 class="display-4 fw-bold mb-2">DDW</h1>
+            <p class="lead mb-0">Desarrollo y Diseño Web</p>
+            <p class="mt-2 opacity-75">Ecosistema de soluciones digitales inteligentes</p>
+          </div>
+          
+          <div class="portal-body">
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <div class="feature-box">
+                  <div class="feature-icon">📱</div>
+                  <h5>WhatsApp Marketing</h5>
+                  <p class="text-muted small">Campañas masivas automatizadas</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="feature-box">
+                  <div class="feature-icon">🤖</div>
+                  <h5>Bot Responder</h5>
+                  <p class="text-muted small">IA conversacional 24/7</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="feature-box">
+                  <div class="feature-icon">🌐</div>
+                  <h5>API Lugares</h5>
+                  <p class="text-muted small">Base de datos geolocalizada</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-5">
+              <a href="/login.html" class="btn btn-portal">
+                Acceder al Dashboard
+              </a>
+              <p class="mt-4 text-muted small">
+                Clientes: <strong>Haby</strong> · <strong>Marketing</strong> | Admin: <strong>b3toh</strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="border-top py-3 px-4 text-center">
+            <small class="text-muted">DDW Ecosystem &copy; 2025 - Micro SaaS Platform</small>
+          </div>
         </div>
       </div>
     </div>
-    <footer class="mt-5 text-center text-muted">
-      <small>WhatsApp Massive Sender &copy; 2025</small>
-    </footer>
   </div>
-
-  <script src="/dashboard_link.js"></script>
 </body>
 </html>

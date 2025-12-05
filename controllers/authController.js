@@ -35,6 +35,8 @@ module.exports = {
       redirect = '/haby/dashboard.html';
     } else if (user.usuario.toLowerCase() === 'habysupply') {
       redirect = '/habysupply/dashboard.html';
+    } else if (user.usuario.toLowerCase() === 'marketing') {
+      redirect = '/marketing/dashboard.html';
     } else {
       redirect = `/public/${user.usuario.toLowerCase()}/dashboard.html`;
     }

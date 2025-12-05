@@ -125,12 +125,29 @@ app.use('/marketing', requireAuth, marketingRouter);
 app.use('/haby', requireAuth, habyRouter);
 app.use('/admin', requireAuth, adminRouter);
 
+// Middleware para proteger carpetas de clientes en archivos estáticos
+app.use('/haby/*', requireAuth, (req, res, next) => {
+  if (req.session.tipo !== 'admin' && req.session.cliente !== 'haby') {
+    return res.status(403).send('Acceso denegado');
+  }
+  next();
+});
+
+app.use('/marketing/*', requireAuth, (req, res, next) => {
+  if (req.session.tipo !== 'admin' && req.session.cliente !== 'marketing') {
+    return res.status(403).send('Acceso denegado');
+  }
+  next();
+});
+
+app.use('/admin/*', requireAdmin);
+
 // Servir archivos estáticos sin sobrescribir la ruta principal
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // Ruta principal (HTML base) al final
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const programacionScheduler = require('./services/programacionScheduler');
