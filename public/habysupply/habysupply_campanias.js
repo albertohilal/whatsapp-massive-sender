@@ -1,0 +1,210 @@
+// habysupply_campanias.js
+// Extraído de public/habysupply/campanias.html
+
+let cacheCampanias = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Configurar botón "Volver al panel" para preservar parámetros
+  const btnVolver = document.getElementById('btn-volver');
+  if (btnVolver) {
+    const params = new URLSearchParams(window.location.search);
+    const dashboardUrl = '/habysupply/dashboard.html' + (params.toString() ? '?' + params.toString() : '');
+    btnVolver.href = dashboardUrl;
+  }
+
+  mostrarUsuario();
+  cargarCampanias();
+  const select = document.getElementById('selector-campania');
+  if (select) {
+    select.addEventListener('change', e => cargarEnvios(e.target.value));
+  }
+  const btnEnviar = document.getElementById('btn-enviar-campania');
+  if (btnEnviar) {
+    btnEnviar.addEventListener('click', async () => {
+      const campaniaId = select.value;
+      if (!campaniaId) {
+        alert('Selecciona una campaña.');
+        return;
+      }
+      // Obtener destinatarios pendientes
+      let envios = [];
+      try {
+        // Construir URL con cliente_id si es modo admin
+        const params = new URLSearchParams(window.location.search);
+        const clienteId = params.get('cliente');
+        let url = `/habysupply/api/envios?campania_id=${campaniaId}`;
+        if (clienteId) {
+          url += `&cliente_id=${clienteId}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+        envios = Array.isArray(data) ? data.filter(e => e.estado === 'pendiente') : [];
+      } catch (err) {
+        console.error('Error al obtener destinatarios:', err);
+        alert('Error al obtener destinatarios.');
+        return;
+      }
+      if (!envios.length) {
+        alert('No hay destinatarios pendientes para enviar.');
+        return;
+      }
+      // Preparar payload para envío masivo
+      // Siempre usar 'habysupply' como cliente (nombre de la sesión de WhatsApp)
+      const payload = {
+        envios: envios.map(e => ({ id: e.id, telefono: e.telefono_wapp, texto: e.mensaje_final })),
+        cliente: 'habysupply'
+      };
+      try {
+        const res = await fetch('/api/generar-envios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.enviados > 0) {
+          alert(`Se enviaron ${result.enviados} mensajes.`);
+          cargarEnvios(campaniaId);
+        } else {
+          alert('No se enviaron mensajes.');
+        }
+      } catch {
+        alert('Error al enviar la campaña.');
+      }
+    });
+  }
+});
+
+async function mostrarUsuario() {
+  try {
+    const res = await fetch('/api/usuario-logueado');
+    const data = await res.json();
+    const btnEnviar = document.getElementById('btn-enviar-campania');
+    if (data && data.usuario) {
+      document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
+      if (data.tipo === 'admin') {
+        document.getElementById('admin-clientes-selector').style.display = '';
+        await cargarClientesSelector();
+        if (btnEnviar) btnEnviar.style.display = 'block';
+        const notaEnvio = document.getElementById('nota-envio');
+        if (notaEnvio) notaEnvio.style.display = 'none';
+      } else {
+        if (btnEnviar) btnEnviar.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    document.getElementById('usuario-logueado').textContent = '';
+  }
+}
+
+async function cargarClientesSelector() {
+  const select = document.getElementById('selector-clientes');
+  select.innerHTML = '<option value="">Todos</option>';
+  try {
+    const res = await fetch('/admin/api/clientes');
+    const clientes = await res.json();
+    clientes.forEach(c => {
+      select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+    });
+    select.addEventListener('change', () => cargarCampanias(true));
+  } catch {}
+}
+
+async function cargarCampanias(fromSelector) {
+  const cont = document.getElementById('lista-campanias');
+  cont.textContent = 'Cargando campañas...';
+  const params = new URLSearchParams(window.location.search);
+  const modoAdmin = params.get('modo') === 'admin';
+  let clienteId = params.get('cliente_id') || params.get('cliente');
+  if (modoAdmin) {
+    const select = document.getElementById('selector-clientes');
+    if (fromSelector && select && select.value) {
+      clienteId = select.value;
+    }
+  }
+  let url = '/habysupply/api/campanias';
+  if (modoAdmin && clienteId) {
+    url += `?cliente_id=${clienteId}`;
+  }
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    cacheCampanias = Array.isArray(data) ? data : [];
+    if (!cacheCampanias.length) {
+      cont.innerHTML = '<div class="muted">Aún no hay campañas creadas.</div>';
+    } else {
+      cont.innerHTML = '<div class="list-grid">' + cacheCampanias.map(c => `
+        <div class="campaign-card">
+          <div style="font-weight:600;font-size:1.05rem;">${c.nombre}</div>
+          <div style="margin:10px 0;color:#4a5568;">${c.mensaje}</div>
+          <div class="estado">Estado: <span style="color:${c.estado==='pendiente' ? '#f59e0b' : c.estado==='aprobada' ? '#0b74de' : '#1f9254'}">${c.estado || 'pendiente'}</span></div>
+          <div class="muted" style="margin-top:8px;">Destinatarios: ${c.total_envios || 0}</div>
+        </div>
+      `).join('') + '</div>';
+    }
+    actualizarSelector();
+  } catch (err) {
+    cont.innerHTML = '<div class="error-message">No se pudieron cargar las campañas.</div>';
+    actualizarSelector();
+  }
+}
+
+function actualizarSelector() {
+  const select = document.getElementById('selector-campania');
+  if (!select) return;
+  if (!cacheCampanias.length) {
+    select.innerHTML = '<option value="">Sin campañas</option>';
+    renderEnvios([]);
+    return;
+  }
+  select.innerHTML = cacheCampanias.map(c => `<option value="${c.id}">${c.nombre} (${c.total_envios || 0})</option>`).join('');
+  cargarEnvios(select.value);
+}
+
+async function cargarEnvios(campaniaId) {
+  const resumen = document.getElementById('resumen-envios');
+  if (!campaniaId) {
+    resumen.textContent = 'Selecciona una campaña para ver sus destinatarios.';
+    renderEnvios([]);
+    return;
+  }
+  resumen.textContent = 'Cargando destinatarios...';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const clienteId = params.get('cliente_id') || params.get('cliente');
+    let url = `/habysupply/api/envios?campania_id=${campaniaId}`;
+    if (clienteId) {
+      url += `&cliente_id=${clienteId}`;
+    }
+    const res = await fetch(url);
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      resumen.textContent = data.length
+        ? `${data.length} destinatario(s) configurados.`
+        : 'Esta campaña todavía no tiene destinatarios.';
+      renderEnvios(data);
+    } else {
+      throw new Error('Respuesta no válida');
+    }
+  } catch (err) {
+    console.error('Error al cargar envíos:', err);
+    resumen.textContent = 'Error al obtener los destinatarios.';
+    renderEnvios([]);
+  }
+}
+
+function renderEnvios(envios) {
+  const tbody = document.getElementById('tabla-envios');
+  if (!tbody) return;
+  if (!envios || !envios.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="muted">Sin registros.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = envios.map(e => `
+    <tr>
+      <td>${e.nombre_destino || 'Sin nombre'}</td>
+      <td>${e.telefono_wapp || '-'}</td>
+      <td>${e.estado || '-'}</td>
+      <td>${e.rubro || 'Sin rubro'}</td>
+    </tr>
+  `).join('');
+}

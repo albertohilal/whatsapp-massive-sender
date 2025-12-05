@@ -229,7 +229,7 @@
         <p style="color: #666;">Usuario: <strong id="usuario-logueado"></strong></p>
       </div>
       <div>
-        <button class="btn btn-success" onclick="abrirModalCrear()">+ Crear Usuario</button>
+  <button class="btn btn-success">+ Crear Usuario</button>
         <a href="/admin/dashboard.html" class="btn btn-secondary">← Volver al Panel</a>
       </div>
     </div>
@@ -255,7 +255,7 @@
 
     <div id="empty-state" class="empty-state" style="display: none;">
       <p>📭 No hay usuarios registrados</p>
-      <button class="btn btn-success" onclick="abrirModalCrear()">Crear primer usuario</button>
+  <button class="btn btn-success">Crear primer usuario</button>
     </div>
   </div>
 
@@ -264,9 +264,9 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modal-titulo">Crear Usuario</h2>
-        <button class="close" onclick="cerrarModal()">&times;</button>
+  <button class="close">&times;</button>
       </div>
-      <form id="form-usuario" onsubmit="guardarUsuario(event)">
+  <form id="form-usuario">
         <input type="hidden" id="usuario-id">
         
         <div class="form-group">
@@ -283,7 +283,7 @@
 
         <div class="form-group">
           <label for="tipo">Tipo *</label>
-          <select id="tipo" required onchange="toggleClienteId()">
+          <select id="tipo" required>
             <option value="">Seleccionar...</option>
             <option value="admin">Administrador</option>
             <option value="cliente">Cliente</option>
@@ -304,265 +304,9 @@
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
-          <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
           <button type="submit" class="btn btn-success">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    let modoEdicion = false;
-    let usuarioEditandoId = null;
-
-    // Cargar usuario logueado
-    async function cargarUsuarioLogueado() {
-      try {
-        const res = await fetch('/api/usuario-logueado');
-        const data = await res.json();
-        if (data.usuario) {
-          document.getElementById('usuario-logueado').textContent = data.usuario;
-        }
-      } catch (error) {
-        console.error('Error al cargar usuario:', error);
-      }
-    }
-
-    // Cargar lista de usuarios
-    async function cargarUsuarios() {
-      try {
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('tabla-usuarios').style.display = 'none';
-        document.getElementById('empty-state').style.display = 'none';
-
-        const res = await fetch('/api/usuarios');
-        const data = await res.json();
-
-        if (!data.ok) {
-          throw new Error(data.error);
-        }
-
-        const tbody = document.getElementById('tbody-usuarios');
-        tbody.innerHTML = '';
-
-        if (data.usuarios.length === 0) {
-          document.getElementById('loading').style.display = 'none';
-          document.getElementById('empty-state').style.display = 'block';
-          return;
-        }
-
-        data.usuarios.forEach(usuario => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${usuario.id}</td>
-            <td><strong>${usuario.usuario}</strong></td>
-            <td><span class="badge badge-${usuario.tipo}">${usuario.tipo}</span></td>
-            <td>${usuario.cliente_id || '-'}</td>
-            <td><span class="badge badge-${usuario.activo ? 'activo' : 'inactivo'}">${usuario.activo ? 'Activo' : 'Inactivo'}</span></td>
-            <td class="actions">
-              <button class="btn btn-warning btn-small" onclick="editarUsuario(${usuario.id})">✏️ Editar</button>
-              ${usuario.activo ? 
-                `<button class="btn btn-danger btn-small" onclick="eliminarUsuario(${usuario.id}, '${usuario.usuario}')">🗑️ Desactivar</button>` :
-                `<button class="btn btn-success btn-small" onclick="activarUsuario(${usuario.id})">✅ Activar</button>`
-              }
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('tabla-usuarios').style.display = 'table';
-      } catch (error) {
-        console.error('Error al cargar usuarios:', error);
-        alert('Error al cargar usuarios: ' + error.message);
-        document.getElementById('loading').style.display = 'none';
-      }
-    }
-
-    // Abrir modal para crear
-    function abrirModalCrear() {
-      modoEdicion = false;
-      usuarioEditandoId = null;
-      document.getElementById('modal-titulo').textContent = 'Crear Usuario';
-      document.getElementById('form-usuario').reset();
-      document.getElementById('usuario-id').value = '';
-      document.getElementById('password').required = true;
-      document.getElementById('password-opcional').textContent = '*';
-      document.getElementById('activo').checked = true;
-      document.getElementById('grupo-cliente-id').style.display = 'none';
-      document.getElementById('modal-usuario').classList.add('show');
-    }
-
-    // Editar usuario
-    async function editarUsuario(id) {
-      try {
-        const res = await fetch(`/api/usuarios/${id}`);
-        const data = await res.json();
-
-        if (!data.ok) {
-          throw new Error(data.error);
-        }
-
-        const usuario = data.usuario;
-        modoEdicion = true;
-        usuarioEditandoId = id;
-        
-        document.getElementById('modal-titulo').textContent = 'Editar Usuario';
-        document.getElementById('usuario-id').value = usuario.id;
-        document.getElementById('usuario').value = usuario.usuario;
-        document.getElementById('password').value = '';
-        document.getElementById('password').required = false;
-        document.getElementById('password-opcional').textContent = '(dejar vacío para no cambiar)';
-        document.getElementById('tipo').value = usuario.tipo;
-        document.getElementById('cliente_id').value = usuario.cliente_id || '';
-        document.getElementById('activo').checked = usuario.activo === 1;
-        
-        toggleClienteId();
-        document.getElementById('modal-usuario').classList.add('show');
-      } catch (error) {
-        console.error('Error al cargar usuario:', error);
-        alert('Error al cargar usuario: ' + error.message);
-      }
-    }
-
-    // Guardar usuario (crear o actualizar)
-    async function guardarUsuario(event) {
-      event.preventDefault();
-
-      const id = document.getElementById('usuario-id').value;
-      const usuario = document.getElementById('usuario').value;
-      const password = document.getElementById('password').value;
-      const tipo = document.getElementById('tipo').value;
-      const cliente_id = document.getElementById('cliente_id').value;
-      const activo = document.getElementById('activo').checked;
-
-      // Validaciones
-      if (tipo === 'cliente' && !cliente_id) {
-        alert('Para tipo "cliente" se requiere Cliente ID');
-        return;
-      }
-
-      if (!modoEdicion && !password) {
-        alert('La contraseña es requerida para crear un usuario');
-        return;
-      }
-
-      if (password && (password.length < 6 || password.length > 13)) {
-        alert('La contraseña debe tener entre 6 y 13 caracteres');
-        return;
-      }
-
-      const body = {
-        usuario,
-        tipo,
-        cliente_id: cliente_id || null,
-        activo
-      };
-
-      if (password) {
-        body.password = password;
-      }
-
-      try {
-        const url = modoEdicion ? `/api/usuarios/${id}` : '/api/usuarios';
-        const method = modoEdicion ? 'PUT' : 'POST';
-
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-
-        if (!data.ok) {
-          throw new Error(data.error);
-        }
-
-        alert(data.message);
-        cerrarModal();
-        cargarUsuarios();
-      } catch (error) {
-        console.error('Error al guardar usuario:', error);
-        alert('Error al guardar usuario: ' + error.message);
-      }
-    }
-
-    // Eliminar usuario (desactivar)
-    async function eliminarUsuario(id, usuario) {
-      if (!confirm(`¿Estás seguro de desactivar el usuario "${usuario}"?`)) {
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/usuarios/${id}`, {
-          method: 'DELETE'
-        });
-
-        const data = await res.json();
-
-        if (!data.ok) {
-          throw new Error(data.error);
-        }
-
-        alert(data.message);
-        cargarUsuarios();
-      } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        alert('Error al eliminar usuario: ' + error.message);
-      }
-    }
-
-    // Activar usuario
-    async function activarUsuario(id) {
-      try {
-        const res = await fetch(`/api/usuarios/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ activo: true })
-        });
-
-        const data = await res.json();
-
-        if (!data.ok) {
-          throw new Error(data.error);
-        }
-
-        alert(data.message);
-        cargarUsuarios();
-      } catch (error) {
-        console.error('Error al activar usuario:', error);
-        alert('Error al activar usuario: ' + error.message);
-      }
-    }
-
-    // Cerrar modal
-    function cerrarModal() {
-      document.getElementById('modal-usuario').classList.remove('show');
-    }
-
-    // Toggle campo Cliente ID según tipo
-    function toggleClienteId() {
-      const tipo = document.getElementById('tipo').value;
-      const grupoClienteId = document.getElementById('grupo-cliente-id');
-      const clienteIdInput = document.getElementById('cliente_id');
-      
-      if (tipo === 'cliente') {
-        grupoClienteId.style.display = 'block';
-        clienteIdInput.required = true;
-      } else {
-        grupoClienteId.style.display = 'none';
-        clienteIdInput.required = false;
-        clienteIdInput.value = '';
-      }
-    }
-
-    // Cerrar modal al hacer clic fuera
-    document.getElementById('modal-usuario').addEventListener('click', function(e) {
-      if (e.target === this) {
-        cerrarModal();
-      }
-    });
+        <script src="/admin/admin_usuarios.js" defer></script>
 
     // Inicializar
     cargarUsuarioLogueado();

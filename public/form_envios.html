@@ -168,51 +168,6 @@
   </div>
 
   <script src="envios_front.js"></script>
-  <script>
-    // Mostrar usuario logueado
-    async function mostrarUsuario() {
-      try {
-        const res = await fetch('/api/usuario-logueado');
-        const data = await res.json();
-        if (data && data.usuario) {
-          document.getElementById('usuario-logueado').textContent = `Usuario: ${data.usuario}`;
-          return data;
-        }
-      } catch (err) {
-        document.getElementById('usuario-logueado').textContent = '';
-      }
-      return null;
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      const userData = await mostrarUsuario();
-      
-      const params = new URLSearchParams(window.location.search);
-      const sessionOverride = params.get('session') || params.get('sessionName');
-      const link = document.getElementById('volver-form-envios');
-      if (link && sessionOverride === 'habysupply') {
-        link.href = '/habysupply/dashboard.html';
-      }
-
-      let clienteNombre = params.get('cliente_nombre');
-      const sessionNameMap = {
-        haby: 'Haby',
-        habysupply: 'Habysupply',
-        marketing: 'Marketing'
-      };
-      if (!clienteNombre && userData?.tipo === 'cliente' && userData.usuario) {
-        clienteNombre = userData.usuario;
-      } else if (!clienteNombre && sessionOverride && sessionNameMap[sessionOverride]) {
-        clienteNombre = sessionNameMap[sessionOverride];
-      }
-      if (clienteNombre) {
-        const clienteActual = document.getElementById('cliente-actual');
-        if (clienteActual) {
-          clienteActual.textContent = `Cliente: ${clienteNombre}`;
-        }
-      }
-    });
-  </script>
 
   <script src="/dashboard_link.js"></script>
 </body>
