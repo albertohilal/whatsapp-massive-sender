@@ -88,10 +88,18 @@ router.get('/api/wapp-session', async (req, res) => {
   if (!habyClientWrapper) {
     return res.json({ status: 'desconectado', qr: null });
   }
-  res.json({ 
+  
+  const response = {
     status: habyClientWrapper.status,
     qr: lastQRCode // Incluir QR si está disponible
-  });
+  };
+  
+  // Log para debug
+  if (lastQRCode) {
+    console.log(`✅ Enviando QR al frontend (primeros 50 chars): ${lastQRCode.substring(0, 50)}...`);
+  }
+  
+  res.json(response);
 });
 
 // Iniciar sesión WhatsApp
