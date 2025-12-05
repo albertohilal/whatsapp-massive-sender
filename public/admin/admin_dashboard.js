@@ -4,7 +4,30 @@
 async function ejecutarAccion(accion) {
   const res = await fetch(`/pm2/${accion}`, { method: 'POST' });
   const data = await res.json();
-  alert(`Servidor ${accion}: ${data.status}`);
+  alert(`Servidor ${accion}: ${data.message || data.status || 'acción ejecutada'}`);
+  cargarEstado();
+}
+
+async function controlarProceso(processName, accion) {
+  if (!confirm(`¿Confirmas ${accion} el proceso "${processName}"?`)) return;
+
+  try {
+    const res = await fetch(`/pm2/proceso/${accion}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ processName })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      alert(`Error: ${data.error}`);
+    } else {
+      alert(`Proceso "${processName}" - ${accion}: ${data.message || 'Completado'}`);
+    }
+  } catch (err) {
+    alert(`Error al ejecutar ${accion}: ${err.message}`);
+  }
+
   cargarEstado();
 }
 
@@ -12,15 +35,24 @@ async function cargarEstado() {
   const res = await fetch('/pm2/status');
   const data = await res.json();
   const contenedor = document.getElementById("estado");
-  contenedor.innerHTML = data.map(proc => `
+  contenedor.innerHTML = data.map(proc => {
+    const isOnline = proc.pm2_env.status === 'online';
+    const statusColor = isOnline ? 'green' : 'red';
+    return `
     <tr>
       <td>${proc.name}</td>
       <td>${proc.pm_id}</td>
-      <td>${proc.pm2_env.status}</td>
+      <td><span style="color:${statusColor};font-weight:bold">${proc.pm2_env.status}</span></td>
       <td>${proc.pm2_env.restart_time}</td>
       <td>${proc.pm2_env.pm_uptime ? new Date(proc.pm2_env.pm_uptime).toLocaleString() : ''}</td>
+      <td>
+        <button onclick="controlarProceso('${proc.name}', 'start')" ${isOnline ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;margin:2px">▶ Iniciar</button>
+        <button onclick="controlarProceso('${proc.name}', 'stop')" ${!isOnline ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;margin:2px">⏹ Detener</button>
+        <button onclick="controlarProceso('${proc.name}', 'restart')" ${!isOnline ? 'disabled' : ''} style="padding:4px 8px;font-size:12px;margin:2px">🔄 Reiniciar</button>
+      </td>
     </tr>
-  `).join('');
+    `;
+  }).join('');
 }
 
 
@@ -38,6 +70,8 @@ window.onload = function() {
   const btnIniciarSesion = document.getElementById('btn-iniciar-sesion');
   if (btnIniciarSesion) btnIniciarSesion.addEventListener('click', iniciarSesion);
 };
+
+window.controlarProceso = controlarProceso;
 
 async function mostrarUsuario() {
   const cont = document.getElementById('usuario-logueado');
