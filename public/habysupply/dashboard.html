@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Habysupply - WhatsApp Massive Sender</title>
   <link rel="stylesheet" href="/habysupply/style.css">
+  <script src="/habysupply/habysupply_dashboard.js" defer></script>
 </head>
 <body>
   <h1>Habysupply</h1>
@@ -11,39 +12,42 @@
   <p class="subtitle">Sigue estos pasos para dejar tus campañas listas y permitir que el administrador realice los envíos.</p>
 
   <section class="card" style="margin-bottom:24px;">
-    <script src="/habysupply/habysupply_dashboard.js" defer></script>
-      this.disabled = true;
-      try {
-        const res = await fetch('/habysupply/api/wapp-session/init', { method: 'POST' });
-        const data = await res.json();
-        alert(data.message || (data.success ? 'Sesión iniciándose...' : 'No se pudo iniciar'));
-      } catch (err) {
-        console.error('Error al iniciar sesión:', err);
-        alert('Error iniciando sesión.');
-      }
-      this.disabled = false;
-      cargarEstadoSesion();
-    });
+    <h2>Indicaciones para el cliente</h2>
+    <ol>
+      <li><strong>Crea o edita campañas</strong> usando el botón “Formulario de campañas”. Solo las campañas en estado pendiente se pueden modificar.</li>
+      <li><strong>Agrega prospectos</strong> desde “Seleccionar prospectos”. Usa los filtros y agrega los contactos a la campaña correcta.</li>
+      <li><strong>Verifica la información</strong> en “Ver campañas”. Revisa que cada campaña tenga los destinatarios esperados.</li>
+      <li><strong>Inicia la sesión de WhatsApp</strong> desde esta pantalla. Pulsa “Iniciar sesión WhatsApp”, escanea el QR y espera a ver el estado “conectado”. Una vez que el servidor confirma la conexión, la sesión queda activa aunque cierres la ventana o tu computadora; el administrador podrá enviar la campaña más tarde.</li>
+      <li><strong>No cierres la sesión desde el botón rojo</strong> hasta que el administrador confirme que ya envió todo. Ese botón limpia el QR y desconecta el número.</li>
+      <li><strong>Coordina con el administrador</strong> cuando hayas completado los pasos anteriores. Él ejecutará los envíos utilizando la sesión que dejaste activa.</li>
+    </ol>
+    <p class="muted">Si necesitas reiniciar la sesión o limpiar el QR (por ejemplo, para vincular otro número), usa el botón “Cerrar sesión” y vuelve a iniciar.</p>
+  </section>
 
-    document.getElementById('wapp-session-close').addEventListener('click', async function() {
-      this.disabled = true;
-      try {
-        const res = await fetch('/habysupply/api/wapp-session/close', { method: 'POST' });
-        const data = await res.json();
-        alert(data.message || (data.success ? 'Sesión cerrada.' : 'No se pudo cerrar'));
-      } catch (err) {
-        console.error('Error al cerrar sesión:', err);
-        alert('Error cerrando sesión.');
-      }
-      this.disabled = false;
-      cargarEstadoSesion();
-    });
+  <div class="actions">
+    <button id="wapp-session-init">Iniciar sesión WhatsApp</button>
+    <button id="wapp-session-close" class="btn-danger">Cerrar sesión</button>
+  </div>
+  <div class="actions">
+    <a class="btn-link" href="/form_campania.html?session=habysupply" target="_blank" rel="noopener">Formulario de campañas</a>
+    <a class="btn-link" href="/form_envios.html?session=habysupply" target="_blank" rel="noopener">Seleccionar prospectos</a>
+    <a class="btn-link btn-secondary" href="/habysupply/campanias.html" target="_blank" rel="noopener">Ver campañas</a>
+  </div>
 
-    window.addEventListener('DOMContentLoaded', () => {
-      cargarCampanias();
-      cargarEstadoSesion();
-    });
-  </script>
+  <section class="card">
+    <h2>Estado de la sesión</h2>
+    <p class="muted">Mantén la sesión activa solo al preparar campañas. Si necesitas reiniciar el QR, usa el botón “Cerrar sesión”.</p>
+    <div id="wapp-session-status" class="status-line">Consultando estado...</div>
+  </section>
+
+  <section class="card">
+    <h2>Respuestas automáticas</h2>
+    <p class="muted">Activa o desactiva el bot de respuestas automáticas cuando necesites pausar la atención.</p>
+    <div class="responder-control">
+      <span id="responder-status" class="status-line">Consultando estado...</span>
+      <button id="responder-toggle">Cambiar estado</button>
+    </div>
+  </section>
 
   <script src="/dashboard_link.js"></script>
 </body>

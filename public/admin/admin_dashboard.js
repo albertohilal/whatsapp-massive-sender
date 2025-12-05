@@ -57,9 +57,42 @@ async function cargarEstado() {
   }).join('');
 }
 
+async function cargarEstadosResponder() {
+  if (!document.getElementById('tabla-respuestas')) return;
+  try {
+    const res = await fetch('/api/bot-responder/lista');
+    if (!res.ok) throw new Error('Error consultando estados');
+    const data = await res.json();
+    const tbody = document.getElementById('tabla-respuestas');
+    tbody.innerHTML = data.map(item => {
+      const activo = item.responder_activo;
+      const badgeColor = activo ? 'green' : 'red';
+      const actualizado = item.actualizado_en
+        ? new Date(item.actualizado_en).toLocaleString()
+        : 'Nunca';
+      const accionLabel = activo ? 'Desactivar' : 'Activar';
+      return `
+        <tr>
+          <td>${item.nombre}</td>
+          <td><span style="color:${badgeColor};font-weight:bold">${activo ? 'Activo' : 'Pausado'}</span></td>
+          <td>${actualizado}</td>
+          <td>
+            <button data-bot-toggle data-bot-cliente="${item.cliente_id}" data-bot-estado="${activo ? 'off' : 'on'}">
+              ${accionLabel}
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error cargando estados de respuestas:', err);
+  }
+}
+
 
 window.onload = function() {
   cargarEstado();
+  cargarEstadosResponder();
   // Botones de control del servidor
   const btnIniciar = document.getElementById('btn-iniciar-servidor');
   const btnDetener = document.getElementById('btn-detener-servidor');
@@ -78,6 +111,30 @@ document.addEventListener('click', event => {
   if (!button) return;
   const { process, action } = button.dataset;
   controlarProceso(process, action);
+});
+
+document.addEventListener('click', async event => {
+  const toggle = event.target.closest('button[data-bot-toggle]');
+  if (!toggle) return;
+  const clienteId = toggle.dataset.botCliente;
+  const accion = toggle.dataset.botEstado === 'on';
+  toggle.disabled = true;
+  try {
+    const res = await fetch('/api/bot-responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cliente_id: clienteId, activo: accion })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || 'No se pudo actualizar');
+    }
+    cargarEstadosResponder();
+  } catch (err) {
+    alert(`Error actualizando respuestas: ${err.message}`);
+  } finally {
+    toggle.disabled = false;
+  }
 });
 
 window.controlarProceso = controlarProceso;

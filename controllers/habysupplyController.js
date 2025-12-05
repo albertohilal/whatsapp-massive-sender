@@ -5,6 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const clientesWapp = {};
 
+function obtenerSlugCliente(req) {
+  const slug = (req.session?.cliente || '').toLowerCase();
+  if (slug) return slug;
+  return 'haby';
+}
+
 function createWappClient(cliente) {
   const clientWrapper = {
     client: new Client({
@@ -43,7 +49,7 @@ function deleteSessionData(cliente) {
 module.exports = {
   // --- Gestión de sesión WhatsApp ---
   wappSessionStatus: (req, res) => {
-    const cliente = req.session?.cliente || 'habysupply';
+    const cliente = obtenerSlugCliente(req);
     const inst = getWappClient(cliente);
     if (!inst) {
       return res.json({ status: 'desconectado' });
@@ -51,7 +57,7 @@ module.exports = {
     res.json({ status: inst.status });
   },
   wappSessionInit: (req, res) => {
-    const cliente = req.session?.cliente || 'habysupply';
+    const cliente = obtenerSlugCliente(req);
     let inst = getWappClient(cliente);
     if (!inst) {
       inst = createWappClient(cliente);
@@ -65,7 +71,7 @@ module.exports = {
     res.json({ success: false, message: 'Sesión ya iniciada o en proceso.' });
   },
   wappSessionClose: (req, res) => {
-    const cliente = req.session?.cliente || 'habysupply';
+    const cliente = obtenerSlugCliente(req);
     const inst = getWappClient(cliente);
     if (inst.initialized) {
       inst.client.destroy();

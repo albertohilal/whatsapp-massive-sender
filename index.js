@@ -109,6 +109,8 @@ const marcarEnviadoRoute = require('./routes/marcar_enviado');
 app.use('/api/marcar-enviado', requireAuth, marcarEnviadoRoute);
 const sesionesRoutes = require('./routes/sesiones');
 app.use('/api/sesiones', requireAuth, sesionesRoutes);
+const botResponderRoutes = require('./routes/bot_responder');
+app.use('/api/bot-responder', requireAuth, botResponderRoutes);
 const usuariosRoutes = require('./routes/usuarios');
 app.use('/api/usuarios', requireAdmin, usuariosRoutes);
 const programacionesRoutes = require('./routes/programaciones');

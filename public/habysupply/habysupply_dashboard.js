@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnVerCampanias && modoAdmin && clienteId) {
     btnVerCampanias.href = `/habysupply/campanias.html?modo=admin&cliente_id=${clienteId}`;
   }
+  inicializarResponderToggle();
 });
 
 async function mostrarUsuario() {
@@ -95,4 +96,56 @@ document.getElementById('wapp-session-close').addEventListener('click', async fu
 window.addEventListener('DOMContentLoaded', () => {
   cargarCampanias();
   cargarEstadoSesion();
+  cargarEstadoResponder();
 });
+
+function inicializarResponderToggle() {
+  const btn = document.getElementById('responder-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const estadoActual = btn.dataset.estado === 'activo';
+    try {
+      const res = await fetch('/api/bot-responder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: !estadoActual })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'No se pudo actualizar');
+      }
+      actualizarUIResponder(data.estado.responder_activo);
+    } catch (err) {
+      alert(`Error actualizando respuestas: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+async function cargarEstadoResponder() {
+  const status = document.getElementById('responder-status');
+  if (!status) return;
+  status.textContent = 'Consultando estado...';
+  try {
+    const res = await fetch('/api/bot-responder');
+    if (!res.ok) throw new Error('No se pudo consultar');
+    const data = await res.json();
+    actualizarUIResponder(data.responder_activo);
+  } catch (err) {
+    console.error('Error consultando estado de respuestas:', err);
+    status.textContent = 'Estado no disponible';
+  }
+}
+
+function actualizarUIResponder(activo) {
+  const status = document.getElementById('responder-status');
+  const btn = document.getElementById('responder-toggle');
+  if (!status || !btn) return;
+  status.textContent = activo ? 'Respuestas activas' : 'Respuestas pausadas';
+  status.className = `status-line ${activo ? 'status-ok' : 'status-off'}`;
+  btn.textContent = activo ? 'Pausar respuestas' : 'Activar respuestas';
+  btn.dataset.estado = activo ? 'activo' : 'pausado';
+}

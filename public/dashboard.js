@@ -96,16 +96,32 @@ async function cargarSesiones() {
 async function iniciarSesion() {
   const sessionName = document.getElementById('nuevoSessionName').value.trim();
   if (!sessionName) return alert('Ingresa el nombre de la sesión');
-  const res = await fetch('/api/sesiones/iniciar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionName })
-  });
-  const data = await res.json();
-  if (data.qr) {
-    document.getElementById(`qr-${sessionName}`).innerHTML = `<img src='https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(data.qr)}&size=150x150' alt='QR' />`;
+  
+  try {
+    const res = await fetch('/api/sesiones/iniciar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionName })
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      alert(`Error al iniciar sesión: ${data.error}`);
+      return;
+    }
+    
+    if (data.status === 'iniciando') {
+      alert(`Sesión "${sessionName}" iniciándose. Revisa la consola del servidor para ver el QR o escanéalo desde la ventana de Chrome que se abre.`);
+    }
+    
+    // Recargar las sesiones después de un momento
+    setTimeout(() => {
+      cargarSesiones();
+    }, 2000);
+    
+  } catch (err) {
+    alert(`Error de red: ${err.message}`);
   }
-  cargarSesiones();
 }
 
 async function validarSesion(sessionName) {

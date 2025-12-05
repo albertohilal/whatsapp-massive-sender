@@ -90,13 +90,22 @@ document.getElementById('wapp-session-init').addEventListener('click', async fun
   try {
     const res = await fetch('/haby/api/wapp-session/init', { method: 'POST' });
     const data = await res.json();
-    alert(data.message || (data.success ? 'Sesión iniciándose...' : 'No se pudo iniciar'));
+    
+    if (data.success) {
+      alert(data.message || 'Sesión iniciándose... Se abrirá una ventana de Chrome. Escanea el QR con WhatsApp.');
+    } else {
+      alert(data.message || 'No se pudo iniciar la sesión');
+    }
   } catch (err) {
     console.error('Error al iniciar sesión:', err);
-    alert('Error iniciando sesión.');
+    alert('Error iniciando sesión. Revisa la consola del servidor.');
   }
   this.disabled = false;
-  cargarEstadoSesion();
+  
+  // Recargar estado después de 2 segundos
+  setTimeout(() => {
+    cargarEstadoSesion();
+  }, 2000);
 });
 
 document.getElementById('wapp-session-close').addEventListener('click', async function() {

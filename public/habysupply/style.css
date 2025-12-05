@@ -94,6 +94,17 @@ button:hover, a.btn-link:hover {
 	color: #dc3545;
 }
 
+.responder-control {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.responder-control button {
+	flex: 0 0 auto;
+}
+
 .list-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

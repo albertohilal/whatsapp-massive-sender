@@ -10,6 +10,8 @@ const clientes = {};
  * @returns {Promise}
  */
 function iniciarCliente(sessionName = 'whatsapp-massive-sender') {
+  console.log(`🚀 Iniciando cliente WhatsApp para sesión: ${sessionName}`);
+  
   return venom
     .create({
       session: sessionName,
@@ -29,15 +31,25 @@ function iniciarCliente(sessionName = 'whatsapp-massive-sender') {
       puppeteerOptions: {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         headless: false
+      },
+      // Manejadores de eventos durante la creación
+      catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
+        console.log(`📱 QR Code recibido para ${sessionName} (intento ${attempts})`);
+        console.log('QR ASCII:');
+        console.log(asciiQR);
+        console.log(`URL QR: ${urlCode}`);
+      },
+      statusFind: (statusSession, sessionName) => {
+        console.log(`🔍 Estado de búsqueda (${sessionName}):`, statusSession);
       }
     })
     .then((clientInstance) => {
       clientes[sessionName] = clientInstance;
-      console.log(`[whatsapp-massive-sender]: Cliente iniciado para sesión ${sessionName}`);
+      console.log(`✅ [whatsapp-massive-sender]: Cliente iniciado para sesión ${sessionName}`);
       return clientInstance;
     })
     .catch((erro) => {
-      console.error(`[whatsapp-massive-sender]: Error al iniciar el cliente (${sessionName}):`, erro);
+      console.error(`❌ [whatsapp-massive-sender]: Error al iniciar el cliente (${sessionName}):`, erro);
       throw erro;
     });
 }

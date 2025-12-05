@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS ll_bot_respuestas (
+  cliente_id INT PRIMARY KEY,
+  responder_activo TINYINT(1) NOT NULL DEFAULT 1,
+  actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  actualizado_por VARCHAR(120)
+);

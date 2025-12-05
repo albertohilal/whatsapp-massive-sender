@@ -21,14 +21,25 @@ router.get('/', (req, res) => {
 router.post('/iniciar', async (req, res) => {
   const { sessionName } = req.body;
   if (!sessionName) return res.status(400).json({ error: 'Falta sessionName' });
+  
   try {
-    const client = await iniciarCliente(sessionName);
-    // Esperar evento QR
-    client.on('qr', qr => {
-      res.json({ session: sessionName, qr });
+    // Primero respondemos que la sesión está iniciando
+    res.json({ 
+      session: sessionName, 
+      status: 'iniciando',
+      message: 'Sesión iniciando, espera el QR...' 
     });
+    
+    // Iniciar el cliente de forma asíncrona
+    const client = await iniciarCliente(sessionName);
+    console.log(`✅ Sesión ${sessionName} iniciada correctamente`);
+    
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(`❌ Error al iniciar sesión ${sessionName}:`, err);
+    // Si hay error y aún no se envió respuesta, enviarla
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 

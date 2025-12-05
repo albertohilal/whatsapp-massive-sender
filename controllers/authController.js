@@ -23,6 +23,9 @@ module.exports = {
       req.session.usuario = user.usuario;
       req.session.tipo = user.tipo;
       req.session.cliente_id = user.cliente_id;
+      if (user.tipo === 'cliente') {
+        req.session.cliente = (user.usuario || '').toLowerCase();
+      }
       // Redirigir según tipo de usuario
   let redirect = '/';
   if (user.tipo === 'admin') {
