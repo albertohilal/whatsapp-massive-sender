@@ -69,13 +69,31 @@ async function cargarEstadoSesion() {
       if (data.qr) {
         const qrDiv = document.getElementById('qr-container');
         if (qrDiv) {
+          // Usar QRCode.js para generar el QR localmente y evitar problemas CORS
           qrDiv.innerHTML = `
             <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; text-align: center;">
-              <p style="margin-bottom: 10px; font-weight: bold;">📱 Escanea este QR con WhatsApp:</p>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.qr)}" 
-                   alt="QR Code" style="max-width: 250px; border: 2px solid #25D366; border-radius: 8px;"/>
+              <p style="margin-bottom: 10px; font-weight: bold; color: #25D366;">📱 Escanea este QR con WhatsApp:</p>
+              <div id="qrcode-display" style="display: inline-block; padding: 10px; background: white; border: 3px solid #25D366; border-radius: 8px;"></div>
             </div>
           `;
+          
+          // Generar QR usando librería
+          if (typeof QRCode !== 'undefined') {
+            new QRCode(document.getElementById('qrcode-display'), {
+              text: data.qr,
+              width: 256,
+              height: 256,
+              colorDark: '#000000',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M
+            });
+          } else {
+            // Fallback: mostrar como imagen usando Chart API (no tiene CORS)
+            document.getElementById('qrcode-display').innerHTML = `
+              <img src="https://chart.googleapis.com/chart?chs=256x256&cht=qr&chl=${encodeURIComponent(data.qr)}&choe=UTF-8" 
+                   alt="QR Code" style="max-width: 256px;"/>
+            `;
+          }
         }
       } else {
         const qrDiv = document.getElementById('qr-container');
