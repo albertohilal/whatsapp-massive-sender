@@ -27,8 +27,20 @@ function createHabyWappClient() {
           '--disable-gpu',
           '--disable-software-rasterizer',
           '--no-first-run',
-          '--no-zygote'
-        ]
+          '--no-zygote',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-features=IsolateOrigins,site-per-process',
+          '--disable-infobars',
+          '--window-size=1920,1080',
+          '--start-maximized',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ],
+        ignoreDefaultArgs: ['--enable-automation'],
+      },
+      webVersionCache: {
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
       }
     }),
     status: 'desconectado',
