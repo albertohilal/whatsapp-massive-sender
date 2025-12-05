@@ -57,4 +57,66 @@ router.post('/restart', (req, res) => {
   });
 });
 
+// ==================== CONTROL INDIVIDUAL DE PROCESOS ====================
+
+// Iniciar proceso específico
+router.post('/proceso/start', (req, res) => {
+  const { processName } = req.body;
+  if (!processName) {
+    return res.status(400).json({ error: 'Falta el nombre del proceso' });
+  }
+
+  pm2.connect(err => {
+    if (err) return res.status(500).json({ error: 'Error conectando a PM2' });
+    
+    pm2.start(processName, err => {
+      pm2.disconnect();
+      if (err) {
+        return res.status(500).json({ error: `Error iniciando ${processName}: ${err.message}` });
+      }
+      res.json({ message: `Proceso ${processName} iniciado correctamente` });
+    });
+  });
+});
+
+// Detener proceso específico
+router.post('/proceso/stop', (req, res) => {
+  const { processName } = req.body;
+  if (!processName) {
+    return res.status(400).json({ error: 'Falta el nombre del proceso' });
+  }
+
+  pm2.connect(err => {
+    if (err) return res.status(500).json({ error: 'Error conectando a PM2' });
+    
+    pm2.stop(processName, err => {
+      pm2.disconnect();
+      if (err) {
+        return res.status(500).json({ error: `Error deteniendo ${processName}: ${err.message}` });
+      }
+      res.json({ message: `Proceso ${processName} detenido correctamente` });
+    });
+  });
+});
+
+// Reiniciar proceso específico
+router.post('/proceso/restart', (req, res) => {
+  const { processName } = req.body;
+  if (!processName) {
+    return res.status(400).json({ error: 'Falta el nombre del proceso' });
+  }
+
+  pm2.connect(err => {
+    if (err) return res.status(500).json({ error: 'Error conectando a PM2' });
+    
+    pm2.restart(processName, err => {
+      pm2.disconnect();
+      if (err) {
+        return res.status(500).json({ error: `Error reiniciando ${processName}: ${err.message}` });
+      }
+      res.json({ message: `Proceso ${processName} reiniciado correctamente` });
+    });
+  });
+});
+
 module.exports = router;

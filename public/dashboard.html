@@ -24,16 +24,11 @@
 
   <section class="card">
     <h2>Estado del servicio</h2>
-    <p class="muted">Controla el proceso principal y verifica si está operativo.</p>
-    <div class="actions">
-      <button onclick="ejecutarAccion('start')">Iniciar servidor</button>
-      <button onclick="ejecutarAccion('stop')">Detener</button>
-      <button onclick="ejecutarAccion('restart')">Reiniciar</button>
-    </div>
+    <p class="muted">Controla cada proceso de forma individual desde la tabla. Usa los botones de cada fila para iniciar, detener o reiniciar.</p>
     <table>
       <thead>
         <tr>
-          <th>Proceso</th><th>ID</th><th>Estado</th><th>Reinicios</th><th>Uptime</th>
+          <th>Proceso</th><th>ID</th><th>Estado</th><th>Reinicios</th><th>Uptime</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody id="estado"></tbody>
