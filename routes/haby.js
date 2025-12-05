@@ -6,17 +6,29 @@ const path = require('path');
 
 // Instancia WhatsApp para Haby
 let habyClientWrapper = null;
+let lastQRCode = null; // Guardar último QR generado
 
 function createHabyWappClient() {
   console.log('🚀 Creando cliente WhatsApp para Haby...');
+  
+  // Detectar si estamos en producción (servidor sin display)
+  const isProduction = process.env.NODE_ENV === 'production' || !process.env.DISPLAY;
   
   habyClientWrapper = {
     client: new Client({
       authStrategy: new LocalAuth({ dataPath: 'tokens/haby' }),
       puppeteer: {
-        headless: false,
+        headless: isProduction ? 'new' : false,
         executablePath: '/usr/bin/google-chrome-stable',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--no-first-run',
+          '--no-zygote'
+        ]
       }
     }),
     status: 'desconectado',
@@ -33,6 +45,7 @@ function createHabyWappClient() {
   habyClientWrapper.client.on('qr', (qr) => {
     console.log('📱 QR Code generado para Haby:');
     console.log(qr);
+    lastQRCode = qr; // Guardar para endpoint
   });
 
   // Evento: Cliente desconectado
@@ -51,6 +64,7 @@ function createHabyWappClient() {
   habyClientWrapper.client.on('authenticated', () => {
     console.log('🔐 Cliente WhatsApp Haby autenticado correctamente');
     habyClientWrapper.status = 'autenticado';
+    lastQRCode = null; // Limpiar QR después de autenticar
   });
 
   return habyClientWrapper;
@@ -72,9 +86,12 @@ router.get('/campanias', async (req, res) => {
 // Estado de sesión WhatsApp
 router.get('/api/wapp-session', async (req, res) => {
   if (!habyClientWrapper) {
-    return res.json({ status: 'desconectado' });
+    return res.json({ status: 'desconectado', qr: null });
   }
-  res.json({ status: habyClientWrapper.status });
+  res.json({ 
+    status: habyClientWrapper.status,
+    qr: lastQRCode // Incluir QR si está disponible
+  });
 });
 
 // Iniciar sesión WhatsApp

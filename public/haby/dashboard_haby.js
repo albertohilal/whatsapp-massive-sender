@@ -64,12 +64,32 @@ async function cargarEstadoSesion() {
     if (data && data.status) {
       const ok = data.status === 'conectado';
       statusDiv.innerHTML = `<span class="${ok ? 'status-ok' : 'status-off'}">${data.status}</span>`;
+      
+      // Mostrar QR si está disponible
+      if (data.qr) {
+        const qrDiv = document.getElementById('qr-container');
+        if (qrDiv) {
+          qrDiv.innerHTML = `
+            <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; text-align: center;">
+              <p style="margin-bottom: 10px; font-weight: bold;">📱 Escanea este QR con WhatsApp:</p>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.qr)}" 
+                   alt="QR Code" style="max-width: 250px; border: 2px solid #25D366; border-radius: 8px;"/>
+            </div>
+          `;
+        }
+      } else {
+        const qrDiv = document.getElementById('qr-container');
+        if (qrDiv) qrDiv.innerHTML = '';
+      }
+      
       const campaniaSection = document.getElementById('campania-section');
       if (campaniaSection) {
         campaniaSection.style.display = ok ? '' : 'none';
       }
     } else {
       statusDiv.innerHTML = '<span class="status-off">desconectado</span>';
+      const qrDiv = document.getElementById('qr-container');
+      if (qrDiv) qrDiv.innerHTML = '';
       const campaniaSection = document.getElementById('campania-section');
       if (campaniaSection) {
         campaniaSection.style.display = 'none';
@@ -78,6 +98,8 @@ async function cargarEstadoSesion() {
   } catch (err) {
     console.error('Error al cargar estado:', err);
     statusDiv.innerHTML = '<span class="status-off">Estado no disponible. Reintenta más tarde.</span>';
+    const qrDiv = document.getElementById('qr-container');
+    if (qrDiv) qrDiv.innerHTML = '';
     const campaniaSection = document.getElementById('campania-section');
     if (campaniaSection) {
       campaniaSection.style.display = 'none';
@@ -92,7 +114,18 @@ document.getElementById('wapp-session-init').addEventListener('click', async fun
     const data = await res.json();
     
     if (data.success) {
-      alert(data.message || 'Sesión iniciándose... Se abrirá una ventana de Chrome. Escanea el QR con WhatsApp.');
+      alert(data.message || 'Sesión iniciándose... El QR aparecerá abajo en unos segundos.');
+      
+      // Polling para mostrar el QR
+      let intentos = 0;
+      const intervalo = setInterval(async () => {
+        await cargarEstadoSesion();
+        intentos++;
+        if (intentos >= 30) { // Detener después de 30 segundos
+          clearInterval(intervalo);
+        }
+      }, 1000);
+      
     } else {
       alert(data.message || 'No se pudo iniciar la sesión');
     }
@@ -101,11 +134,6 @@ document.getElementById('wapp-session-init').addEventListener('click', async fun
     alert('Error iniciando sesión. Revisa la consola del servidor.');
   }
   this.disabled = false;
-  
-  // Recargar estado después de 2 segundos
-  setTimeout(() => {
-    cargarEstadoSesion();
-  }, 2000);
 });
 
 document.getElementById('wapp-session-close').addEventListener('click', async function() {
