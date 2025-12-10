@@ -141,7 +141,7 @@ module.exports = {
       const [rows] = await conn.query(`
         SELECT l.id, l.nombre, l.telefono_wapp, l.email
         FROM ll_lugares l
-        JOIN ll_lugares_clientes lc ON l.id = lc.lugar_id
+        JOIN ll_lugares_clientes lc ON lc.ref_ext = CONCAT('lugares_', l.id)
         WHERE lc.cliente_id = 51
       `);
       conn.release();

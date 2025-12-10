@@ -244,7 +244,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
           'sin_envio' AS estado
         FROM ll_lugares
         LEFT JOIN ll_rubros ON ll_lugares.rubro_id = ll_rubros.id
-        INNER JOIN ll_lugares_clientes ON ll_lugares.id = ll_lugares_clientes.lugar_id
+        INNER JOIN ll_lugares_clientes ON ll_lugares_clientes.ref_ext = CONCAT('lugares_', ll_lugares.id)
         WHERE ll_lugares.id NOT IN (
           SELECT DISTINCT lugar_id 
           FROM ll_envios_whatsapp 
