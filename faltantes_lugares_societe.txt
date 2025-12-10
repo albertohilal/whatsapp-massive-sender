@@ -1,0 +1,36 @@
+1726	1950 Tattoo Shop	5491165766149	lugares_1726
+1729	Nito Wan Tattoo	5491132620998	lugares_1729
+1747	DL Tattoos	5491138133566	lugares_1747
+1748	Social Yakuza Tattoo Club	5491162762852	lugares_1748
+1756	Good Plan Tattoo & Piercing	5491169357783	lugares_1756
+1768	Les Amis Tattoo	5491169219652	lugares_1768
+1773	Vinchu Tattoo SHOP	5491169145680	lugares_1773
+1780	Bayres Tattoo Crew	5491158646730	lugares_1780
+1796	X-Force tattoo studio	5491138459102	lugares_1796
+1802	Tirotta tattoo studio	5491159223560	lugares_1802
+1804	Tupac Tattoo Estudio	5491166636732	lugares_1804
+1831	Guadalupe Estudio Tatuajes	5491166333124	lugares_1831
+1870	De Puta Madre Tattoo and Others	5491168835391	lugares_1870
+1871	Fioriti tats	5491155806840	lugares_1871
+1874	BlackTattoo Lomas	5491158043718	lugares_1874
+1949	All Mine Tattoo	5491156414670	lugares_1949
+2521	Nouche Tattoo Piercing	5491128317454	lugares_2521
+2795	Lange Tattoo	5491161437603	lugares_2795
+3084	STUKA TATTOO	5491128965157	lugares_3084
+4422	No Te Salves Tattoo	5491123203927	lugares_4422
+4480	Black Wings Tattoo y bodypiercing lanus	5491123889985	lugares_4480
+4488	KEPLER STUDIO TATTOO BODY PIRCING	5491166922301	lugares_4488
+4524	LBP by Lulu kosteniuk	5491135636216	lugares_4524
+4848	Living Art Argentina	5491161549336	lugares_4848
+5236	Láser Tattoo Lanús	5491161564119	lugares_5236
+5312	MADNESS Tattoo & Piercing / Peluqueria tradicional masculina	5491157935182	lugares_5312
+5990	LUCKY RED	5491151499817	lugares_5990
+6027	Grindhouse tattoo	5491161966594	lugares_6027
+6370	Black Sheep Lomas	5491130726873	lugares_6370
+6379	Giunchi tattoo y piercing	5491154543058	lugares_6379
+6491	KALAKA TATTOO	5491160341313	lugares_6491
+6500	Simpatica Demonnia Tattoo & Piercing	5491132926256	lugares_6500
+6866	Grizzly Tattoo Longchmps	5491167193141	lugares_6866
+6884	GRIZZLY TATTOO SHOP	5491167193141	lugares_6884
+6891	ElMarra Tattoo	5491155867138	lugares_6891
+7089	Piel de cordero	5491135229171	lugares_7089
