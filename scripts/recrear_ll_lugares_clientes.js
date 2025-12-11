@@ -72,8 +72,52 @@ async function main() {
     `, [cliente_id]);
   }
 
+  // 5. Sincronizar ll_societe_extended con rubro_id desde ll_lugares
+  console.log('Sincronizando ll_societe_extended con rubro_id desde ll_lugares...');
+  await conn.query(`
+    INSERT INTO ll_societe_extended (societe_id, rubro_id, origen)
+    SELECT s.rowid, l.rubro_id, 'google_places'
+    FROM llxbx_societe s
+    INNER JOIN ll_lugares l ON s.ref_ext = CONCAT('lugares_', l.id)
+    WHERE l.rubro_id IS NOT NULL
+    ON DUPLICATE KEY UPDATE 
+      rubro_id = VALUES(rubro_id),
+      origen = VALUES(origen),
+      updated_at = CURRENT_TIMESTAMP
+  `);
+
+  // 6. Asegurarse de que ll_lugares_haby tenga rubro_id=299 (Tatuajes)
+  console.log('Asignando rubro_id=299 a ll_lugares_haby...');
+  try {
+    await conn.query(`
+      UPDATE ll_lugares_haby 
+      SET rubro_id = 299 
+      WHERE rubro_id IS NULL
+    `);
+  } catch (err) {
+    console.log('⚠️  ll_lugares_haby no tiene campo rubro_id:', err.message);
+  }
+
+  // 7. Sincronizar ll_societe_extended con rubro_id desde ll_lugares_haby
+  console.log('Sincronizando ll_societe_extended con rubro_id desde ll_lugares_haby...');
+  try {
+    await conn.query(`
+      INSERT INTO ll_societe_extended (societe_id, rubro_id, origen)
+      SELECT s.rowid, COALESCE(h.rubro_id, 299), 'haby'
+      FROM llxbx_societe s
+      INNER JOIN ll_lugares_haby h ON s.ref_ext = CONCAT('haby_', h.id)
+      ON DUPLICATE KEY UPDATE 
+        rubro_id = VALUES(rubro_id),
+        origen = VALUES(origen),
+        updated_at = CURRENT_TIMESTAMP
+    `);
+  } catch (err) {
+    console.log('⚠️  Error sincronizando ll_lugares_haby:', err.message);
+  }
+
   await conn.end();
   console.log('¡Tabla ll_lugares_clientes recreada y poblada exitosamente!');
+  console.log('¡Tabla ll_societe_extended sincronizada exitosamente!');
 }
 
 main().catch(err => {

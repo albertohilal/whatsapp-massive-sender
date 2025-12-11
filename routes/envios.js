@@ -240,10 +240,12 @@ router.get('/filtrar-prospectos', async (req, res) => {
           s.address AS direccion,
           s.phone_mobile AS telefono_wapp,
           1 AS wapp_valido,
-          COALESCE(s.fk_typent, 'Sin rubro') AS rubro,
+          COALESCE(r.nombre, 'Sin rubro') AS rubro,
           'sin_envio' AS estado
         FROM llxbx_societe s
         INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+        LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+        LEFT JOIN ll_rubros r ON se.rubro_id = r.id
         WHERE s.rowid NOT IN (
           SELECT DISTINCT lugar_id 
           FROM ll_envios_whatsapp 
@@ -257,7 +259,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
         params.push(cliente_id);
       }
       if (rubroFiltro) {
-        sql += ' AND COALESCE(s.fk_typent, \'Sin rubro\') LIKE ?';
+        sql += ' AND COALESCE(r.nombre, \'Sin rubro\') LIKE ?';
         params.push(`%${rubroFiltro}%`);
       }
       if (direccionFiltro) {
