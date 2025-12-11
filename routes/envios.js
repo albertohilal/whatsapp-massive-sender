@@ -235,17 +235,16 @@ router.get('/filtrar-prospectos', async (req, res) => {
     } else {
       sql = `
         SELECT 
-          ll_lugares.id,
-          ll_lugares.nombre,
-          ll_lugares.direccion,
-          ll_lugares.telefono_wapp,
-          ll_lugares.wapp_valido,
-          COALESCE(ll_rubros.nombre_es, 'Sin rubro') AS rubro,
+          s.rowid AS id,
+          s.nom AS nombre,
+          s.address AS direccion,
+          s.phone_mobile AS telefono_wapp,
+          1 AS wapp_valido,
+          COALESCE(s.fk_typent, 'Sin rubro') AS rubro,
           'sin_envio' AS estado
-        FROM ll_lugares
-        LEFT JOIN ll_rubros ON ll_lugares.rubro_id = ll_rubros.id
-        INNER JOIN ll_lugares_clientes ON ll_lugares_clientes.ref_ext = CONCAT('lugares_', ll_lugares.id)
-        WHERE ll_lugares.id NOT IN (
+        FROM llxbx_societe s
+        INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+        WHERE s.rowid NOT IN (
           SELECT DISTINCT lugar_id 
           FROM ll_envios_whatsapp 
           WHERE lugar_id IS NOT NULL 
@@ -254,21 +253,21 @@ router.get('/filtrar-prospectos', async (req, res) => {
       `;
 
       if (cliente_id) {
-        sql += ' AND ll_lugares_clientes.cliente_id = ?';
+        sql += ' AND lc.cliente_id = ?';
         params.push(cliente_id);
       }
       if (rubroFiltro) {
-        sql += ' AND COALESCE(ll_rubros.nombre_es, \'Sin rubro\') LIKE ?';
+        sql += ' AND COALESCE(s.fk_typent, \'Sin rubro\') LIKE ?';
         params.push(`%${rubroFiltro}%`);
       }
       if (direccionFiltro) {
-        sql += ' AND ll_lugares.direccion LIKE ?';
+        sql += ' AND s.address LIKE ?';
         params.push(`%${direccionFiltro}%`);
       }
       if (wapp_valido === '1') {
-        sql += ' AND ll_lugares.wapp_valido = 1';
+        sql += ' AND s.phone_mobile IS NOT NULL AND s.phone_mobile != \'\'';
       }
-      sql += ' ORDER BY ll_lugares.nombre';
+      sql += ' ORDER BY s.nom';
     }
 
     console.log('🔍 SQL query:', sql);
