@@ -4,8 +4,8 @@ const authController = require('../controllers/authController');
 const rateLimit = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutos
-	max: 10, // máximo 10 intentos por IP
+	windowMs: 1 * 60 * 1000, // 1 minuto
+	max: 100, // máximo 100 intentos por IP
 	message: {
 		ok: false,
 		error: 'Demasiados intentos de login. Intenta nuevamente en 15 minutos.'

@@ -138,6 +138,27 @@ async function cargarLugares() {
   const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
   const filtroEstado = document.getElementById('filtroEstado')?.value || '';
 
+  // Áreas válidas según ll_rubros.area
+  const AREAS_VALIDAS = [
+    'Tatuadores',
+    'Restaurantes',
+    'Bares',
+    'Cafeterías',
+    'Hoteles',
+    'Gimnasios',
+    'Peluquerías',
+    'Estéticas',
+    'Otro'
+  ];
+  let areaFiltro = '';
+  let rubroFiltro = filtroRubro;
+  // Si el filtro coincide exactamente con un área, filtrar por área
+  const areaMatch = AREAS_VALIDAS.find(a => a.toLowerCase() === filtroRubro);
+  if (areaMatch) {
+    areaFiltro = areaMatch;
+    rubroFiltro = '';
+  }
+
   try {
     // Obtener datos de usuario logueado
     let cliente_id = null;
@@ -167,7 +188,11 @@ async function cargarLugares() {
 
     const params = new URLSearchParams();
     if (campaniaId) params.append('campania', campaniaId);
-    if (filtroRubro) params.append('rubro', filtroRubro);
+    if (areaFiltro) {
+      params.append('area', areaFiltro);
+    } else if (rubroFiltro) {
+      params.append('rubro', rubroFiltro);
+    }
     if (filtroDireccion) params.append('direccion', filtroDireccion);
     if (soloValidos) params.append('wapp_valido', soloValidos);
     if (cliente_id) params.append('cliente_id', cliente_id);
@@ -195,7 +220,11 @@ async function cargarLugares() {
       statusDiv.className = 'alert alert-danger mb-3';
       return;
     }
-    const lugares = await res.json();
+    let lugaresResp = await res.json();
+    // Compatibilidad: si la respuesta es { prospectos: [...] }, usar ese array
+    const lugares = Array.isArray(lugaresResp)
+      ? lugaresResp
+      : (Array.isArray(lugaresResp.prospectos) ? lugaresResp.prospectos : []);
 
     // 2. Obtener prospectos ya asignados a la campaña
     let asignados = [];

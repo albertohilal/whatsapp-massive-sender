@@ -6,7 +6,7 @@ const ADMIN_PASS = process.env.ADMIN_PASS || 'elgeneral2018';
 
 test.describe('Dashboard Administrador', () => {
   test('Login y acceso al dashboard', async ({ page }) => {
-    await page.goto(`${BASE_URL}/`);
+    await page.goto(`${BASE_URL}/login.html`);
     await expect(page.locator('text=Iniciar sesión')).toBeVisible();
     await page.fill('input[name="usuario"]', ADMIN_USER);
     await page.fill('input[name="password"]', ADMIN_PASS);

@@ -69,13 +69,23 @@ router.post('/agregar-a-campania', async (req, res) => {
     }
     const mensajePlantilla = campaniaRows[0].mensaje;
 
-    // Obtener datos de los lugares seleccionados
+
+    // Obtener datos de los lugares seleccionados desde llxbx_societe y enriquecidos
     const placeholders = lugares.map(() => '?').join(',');
     const [lugaresData] = await connection.query(
-      `SELECT l.id, l.nombre, l.telefono_wapp, COALESCE(r.nombre_es, 'Sin rubro') AS rubro, l.direccion 
-       FROM ll_lugares l
-       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
-       WHERE l.id IN (${placeholders}) AND l.wapp_valido = 1`,
+      `SELECT 
+         s.rowid AS id,
+         s.nom AS nombre,
+         s.phone_mobile AS telefono_wapp,
+         COALESCE(r.nombre, 'Sin rubro') AS rubro,
+         s.address AS direccion
+       FROM llxbx_societe s
+       INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+       LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+       LEFT JOIN ll_rubros r ON se.rubro_id = r.id
+       WHERE s.rowid IN (${placeholders})
+         AND s.phone_mobile IS NOT NULL AND s.phone_mobile != ''
+    `,
       lugares
     );
 
@@ -146,11 +156,13 @@ router.get('/filtrar-prospectos', async (req, res) => {
       wapp_valido, 
       cliente_id, 
       solo_seleccionados,
-      estado
+      estado,
+      area
     } = req.query;
 
     const estadoFiltro = (estado || '').trim().toLowerCase();
     const rubroFiltro = rubro && rubro.trim();
+    const areaFiltro = area && area.trim();
     const direccionFiltro = direccion && direccion.trim();
     const params = [];
     let sql;
@@ -184,7 +196,10 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND camp.cliente_id = ?';
         params.push(cliente_id);
       }
-      if (rubroFiltro) {
+      if (areaFiltro) {
+        sql += ' AND r.area = ?';
+        params.push(areaFiltro);
+      } else if (rubroFiltro) {
         sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
         params.push(`%${rubroFiltro}%`);
       }
@@ -258,7 +273,10 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND lc.cliente_id = ?';
         params.push(cliente_id);
       }
-      if (rubroFiltro) {
+      if (areaFiltro) {
+        sql += ' AND r.area = ?';
+        params.push(areaFiltro);
+      } else if (rubroFiltro) {
         sql += ' AND COALESCE(r.nombre, \'Sin rubro\') LIKE ?';
         params.push(`%${rubroFiltro}%`);
       }
@@ -276,12 +294,12 @@ router.get('/filtrar-prospectos', async (req, res) => {
     console.log('🔍 SQL params:', params);
     
     const [rows] = await connection.query(sql, params);
-    
     console.log('✅ Query ejecutada exitosamente');
     console.log('📊 Número de filas:', rows.length);
     console.log('🎯 Primeras 3 filas:', rows.slice(0, 3));
-    
-    res.json(rows);
+
+    // Normalizar respuesta para Playwright: siempre { prospectos: [...] }
+    res.json({ prospectos: rows });
   } catch (error) {
     console.error('Error al filtrar prospectos:', error);
     res.status(500).json({ error: 'Error al filtrar prospectos' });

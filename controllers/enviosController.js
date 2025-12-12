@@ -5,8 +5,7 @@ const obtenerEnvios = async (req, res) => {
   try {
     const conn = await pool.getConnection();
     
-    // Consulta con JOIN entre ll_envios_whatsapp y ll_lugares
-    // Filtrando por estado IN ('enviado', 'pendiente') y wapp_valido = 1
+    // Consulta usando llxbx_societe como fuente principal
     const [rows] = await conn.query(
       `SELECT 
         e.id,
@@ -17,17 +16,19 @@ const obtenerEnvios = async (req, res) => {
         e.estado,
         e.fecha_envio,
         e.lugar_id,
-        l.nombre as lugar_nombre,
-        l.rubro,
-        l.direccion,
-        l.telefono,
-        l.wapp_valido,
-        r.nombre_es as rubro_nombre
+        s.nom as lugar_nombre,
+        COALESCE(r.nombre, 'Sin rubro') as rubro,
+        s.address as direccion,
+        s.phone_mobile as telefono,
+        CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile != '' THEN 1 ELSE 0 END as wapp_valido,
+        r.nombre as rubro_nombre
        FROM ll_envios_whatsapp e
-       INNER JOIN ll_lugares l ON e.lugar_id = l.id
-       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+       INNER JOIN llxbx_societe s ON e.lugar_id = s.rowid
+       LEFT JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+       LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+       LEFT JOIN ll_rubros r ON se.rubro_id = r.id
        WHERE e.estado IN ('enviado', 'pendiente') 
-         AND l.wapp_valido = 1
+         AND s.phone_mobile IS NOT NULL AND s.phone_mobile != ''
        ORDER BY e.fecha_envio DESC, e.id DESC`
     );
     
@@ -56,18 +57,20 @@ const obtenerEnviosPorCampania = async (req, res) => {
         e.estado,
         e.fecha_envio,
         e.lugar_id,
-        l.nombre as lugar_nombre,
-        l.rubro,
-        l.direccion,
-        l.telefono,
-        l.wapp_valido,
-        r.nombre_es as rubro_nombre
+        s.nom as lugar_nombre,
+        COALESCE(r.nombre, 'Sin rubro') as rubro,
+        s.address as direccion,
+        s.phone_mobile as telefono,
+        CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile != '' THEN 1 ELSE 0 END as wapp_valido,
+        r.nombre as rubro_nombre
        FROM ll_envios_whatsapp e
-       INNER JOIN ll_lugares l ON e.lugar_id = l.id
-       LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+       INNER JOIN llxbx_societe s ON e.lugar_id = s.rowid
+       LEFT JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+       LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+       LEFT JOIN ll_rubros r ON se.rubro_id = r.id
        WHERE e.campania_id = ?
          AND e.estado IN ('enviado', 'pendiente') 
-         AND l.wapp_valido = 1
+         AND s.phone_mobile IS NOT NULL AND s.phone_mobile != ''
        ORDER BY e.fecha_envio DESC, e.id DESC`,
       [campania_id]
     );
@@ -96,17 +99,19 @@ const obtenerEnviosPendientes = async (req, res) => {
       e.estado,
       e.fecha_envio,
       e.lugar_id,
-      l.nombre as lugar_nombre,
-      l.rubro,
-      l.direccion,
-      l.telefono,
-      l.wapp_valido,
-      r.nombre_es as rubro_nombre
+      s.nom as lugar_nombre,
+      COALESCE(r.nombre, 'Sin rubro') as rubro,
+      s.address as direccion,
+      s.phone_mobile as telefono,
+      CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile != '' THEN 1 ELSE 0 END as wapp_valido,
+      r.nombre as rubro_nombre
      FROM ll_envios_whatsapp e
-     INNER JOIN ll_lugares l ON e.lugar_id = l.id
-     LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+     INNER JOIN llxbx_societe s ON e.lugar_id = s.rowid
+     LEFT JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+     LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+     LEFT JOIN ll_rubros r ON se.rubro_id = r.id
      WHERE e.estado = 'pendiente' 
-       AND l.wapp_valido = 1`;
+       AND s.phone_mobile IS NOT NULL AND s.phone_mobile != ''`;
     
     const params = [];
     
@@ -138,9 +143,9 @@ const obtenerEstadisticasEnvios = async (req, res) => {
       `SELECT 
         e.estado,
         COUNT(*) as total,
-        COUNT(CASE WHEN l.wapp_valido = 1 THEN 1 END) as con_whatsapp_valido
+        COUNT(CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile != '' THEN 1 END) as con_whatsapp_valido
        FROM ll_envios_whatsapp e
-       INNER JOIN ll_lugares l ON e.lugar_id = l.id
+       INNER JOIN llxbx_societe s ON e.lugar_id = s.rowid
        WHERE e.campania_id = ?
        GROUP BY e.estado`,
       [campania_id]

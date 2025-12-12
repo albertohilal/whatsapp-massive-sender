@@ -4,10 +4,10 @@ test.describe('Filtro de Prospectos con Rubro', () => {
   test.beforeEach(async ({ page }) => {
     // Login
     await page.goto('http://localhost:3010/login.html');
-    await page.fill('input[type="text"]', 'haby');
-    await page.fill('input[type="password"]', 'haby123');
+    await page.fill('input[name="usuario"]', 'Haby');
+    await page.fill('input[name="password"]', 'haby1973');
     await page.click('button[type="submit"]');
-    await page.waitForURL('**/dashboard.html**');
+    await page.waitForURL('**/haby/dashboard.html');
   });
 
   test('debe mostrar columna Rubro en la tabla de prospectos', async ({ page }) => {
@@ -31,19 +31,19 @@ test.describe('Filtro de Prospectos con Rubro', () => {
 
   test('debe filtrar prospectos por rubro Tatuadores', async ({ page }) => {
     await page.goto('http://localhost:3010/form_envios.html?sesion=haby&cliente_id=51&cliente_nombre=Haby');
-    
-    // Filtrar por rubro con texto "tattoo"
-    await page.fill('input[placeholder*="Restaurante"]', 'tattoo');
+
+    // Filtrar por rubro con texto "tattoo" usando el id actualizado
+    await page.fill('#filtroRubro', 'tattoo');
     await page.click('button:has-text("Filtrar")');
-    
+
     await page.waitForSelector('table tbody tr', { timeout: 10000 });
-    
-    // Verificar que todos los resultados contienen "Tatuadores" en el rubro
+
+    // Verificar que todos los resultados contienen "tatua" en el rubro
     const rows = await page.locator('table tbody tr').count();
     expect(rows).toBeGreaterThan(0);
-    
+
     for (let i = 0; i < Math.min(rows, 10); i++) {
-      const rubroText = await page.locator(`table tbody tr:nth-child(${i + 1}) td:nth-child(5)`).textContent();
+      const rubroText = await page.locator(`table tbody tr:nth-child(${i + 1}) td:nth-child(4)`).textContent();
       expect(rubroText?.toLowerCase()).toContain('tatua');
     }
   });

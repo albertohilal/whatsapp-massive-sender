@@ -7,7 +7,7 @@ const CLIENTE_ID = process.env.CLIENTE_HABY_ID || '51';
 
 test.describe('Programaciones de campañas', () => {
   test('Crear programación como admin para un cliente', async ({ page }) => {
-    await page.goto(`${BASE_URL}/`);
+    await page.goto(`${BASE_URL}/login.html`);
     await page.fill('input[name="usuario"]', ADMIN_USER);
     await page.fill('input[name="password"]', ADMIN_PASS);
     await page.click('button[type="submit"]');

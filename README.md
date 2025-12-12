@@ -69,3 +69,46 @@ Esta vista es solo de lectura y sirve para confirmar que todo esté listo antes 
 - Evita crear campañas en estado distinto a “pendiente” si quieres modificarlas luego. Una vez que el administrador las aprueba o envía, ya no podrás editarlas.
 - Si necesitas duplicar una campaña, simplemente crea una nueva con el mismo texto y agrega los destinatarios correspondientes.
 - Si el panel muestra “Error consultando estado” en la sección de sesión, intenta recargar la página. Si persiste, contacta al administrador para revisar el servicio de WhatsApp.
+
+---
+
+## Estructura de carpetas y su función
+
+- **bot/**  
+  Lógica principal para la integración y manejo de WhatsApp (envío, recepción y gestión de sesiones).
+
+- **campaigns/**  
+  Scripts y lógica para la generación y gestión de campañas de envío masivo.
+
+- **clients/**  
+  Archivos y configuraciones específicas para clientes (por ejemplo, `habysupply`).
+
+- **controllers/**  
+  Controladores de la API y lógica de negocio para manejar las rutas y peticiones del backend.
+
+- **db/**  
+  Conexión a la base de datos y archivos de esquema SQL.
+
+- **docs/**  
+  Documentación del proyecto (análisis, arquitectura, checklist, etc.).
+
+- **middleware/**  
+  Middlewares de Express, como autenticación y validaciones.
+
+- **public/**  
+  Archivos estáticos y front-end: HTML, JS y recursos para el panel de administración y formularios.
+
+- **routes/**  
+  Definición de rutas de la API y endpoints del backend.
+
+- **scripts/**  
+  Scripts utilitarios para mantenimiento, migraciones, análisis y pruebas.
+
+- **services/**  
+  Servicios auxiliares y lógica reutilizable (por ejemplo, programadores de tareas).
+
+- **test-results/**  
+  Resultados de pruebas automatizadas.
+
+- **tests/**  
+  Pruebas automatizadas (unitarias, de integración y end-to-end).
