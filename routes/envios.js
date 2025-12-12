@@ -77,7 +77,7 @@ router.post('/agregar-a-campania', async (req, res) => {
          s.rowid AS id,
          s.nom AS nombre,
          s.phone_mobile AS telefono_wapp,
-         COALESCE(r.nombre, 'Sin rubro') AS rubro,
+         COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
          s.address AS direccion
        FROM llxbx_societe s
        INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
@@ -255,7 +255,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
           s.address AS direccion,
           s.phone_mobile AS telefono_wapp,
           1 AS wapp_valido,
-          COALESCE(r.nombre, 'Sin rubro') AS rubro,
+          COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
           'sin_envio' AS estado
         FROM llxbx_societe s
         INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
@@ -277,7 +277,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND r.area = ?';
         params.push(areaFiltro);
       } else if (rubroFiltro) {
-        sql += ' AND COALESCE(r.nombre, \'Sin rubro\') LIKE ?';
+        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
         params.push(`%${rubroFiltro}%`);
       }
       if (direccionFiltro) {
@@ -297,6 +297,14 @@ router.get('/filtrar-prospectos', async (req, res) => {
     console.log('✅ Query ejecutada exitosamente');
     console.log('📊 Número de filas:', rows.length);
     console.log('🎯 Primeras 3 filas:', rows.slice(0, 3));
+
+    // Log temporal: listar prospectos que retornan 'Sin rubro'
+    const sinRubro = rows.filter(r => (r.rubro || '').toLowerCase().includes('sin rubro'));
+    if (sinRubro.length > 0) {
+      console.warn('⚠️ Prospectos retornando "Sin rubro":', sinRubro.map(r => ({ id: r.id, nombre: r.nombre, telefono: r.telefono_wapp, direccion: r.direccion })));
+    } else {
+      console.log('✅ Todos los prospectos tienen rubro asignado.');
+    }
 
     // Normalizar respuesta para Playwright: siempre { prospectos: [...] }
     res.json({ prospectos: rows });
