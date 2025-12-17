@@ -139,22 +139,44 @@ async function cargarLugares() {
   const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
   const filtroEstado = document.getElementById('filtroEstado')?.value || '';
 
+    const filtroTipoCliente = document.getElementById('filtroTipoCliente')?.value || '';
   // Cargar áreas dinámicas si aún no se cargaron
   try {
     const areaSelectHasOnlyDefault = filtroAreaSelect && filtroAreaSelect.options && filtroAreaSelect.options.length <= 1;
     if (areaSelectHasOnlyDefault) {
       const { cliente_id: cid } = await obtenerUsuarioCliente();
-      const query = cid ? `?cliente_id=${encodeURIComponent(cid)}` : '';
-      const resAreas = await fetch(`/api/envios/areas${query}`);
-      if (resAreas.ok) {
-        const dataAreas = await resAreas.json();
-        const areas = Array.isArray(dataAreas.areas) ? dataAreas.areas : [];
-        areas.forEach(a => {
-          const opt = document.createElement('option');
-          opt.value = a;
-          opt.textContent = a;
-          filtroAreaSelect.appendChild(opt);
-        });
+      let asignadas = [];
+      if (cid) {
+        try {
+          const resAsig = await fetch(`/api/clientes/${encodeURIComponent(cid)}/areas-asignadas`);
+          if (resAsig.ok) {
+            const dataAsig = await resAsig.json();
+            asignadas = Array.isArray(dataAsig.areas) ? dataAsig.areas : [];
+          }
+        } catch {}
+      }
+      // Si hay áreas asignadas, usarlas; si no, descubrir áreas disponibles
+      let areasParaMostrar = asignadas;
+      if (!areasParaMostrar || areasParaMostrar.length === 0) {
+        const query = cid ? `?cliente_id=${encodeURIComponent(cid)}` : '';
+        const resAreas = await fetch(`/api/envios/areas${query}`);
+        if (resAreas.ok) {
+          const dataAreas = await resAreas.json();
+          areasParaMostrar = Array.isArray(dataAreas.areas) ? dataAreas.areas : [];
+        }
+      }
+      areasParaMostrar.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        filtroAreaSelect.appendChild(opt);
+      });
+      // Si solo hay una área, seleccionar y deshabilitar el dropdown para UX
+      if (areasParaMostrar.length === 1) {
+        filtroAreaSelect.value = areasParaMostrar[0];
+        filtroAreaSelect.disabled = true;
+      } else {
+        filtroAreaSelect.disabled = false;
       }
     }
   } catch {}
@@ -204,7 +226,7 @@ async function cargarLugares() {
     if (cliente_id) params.append('cliente_id', cliente_id);
     if (soloSeleccionados) params.append('solo_seleccionados', '1');
     if (filtroEstado) params.append('estado', filtroEstado);
-
+    if (filtroTipoCliente) params.append('tipo_cliente', filtroTipoCliente);
     // Debug: mostrar parámetros enviados
     console.log('🔍 Parámetros enviados al backend:', {
       campaniaId,
@@ -292,24 +314,12 @@ async function cargarLugares() {
       // Dirección
       const tdDireccion = document.createElement('td');
       tdDireccion.textContent = lugar.direccion;
-      // Estado
-      const tdEstado = document.createElement('td');
-      const estadoValor = (lugar.estado || 'sin_envio').toLowerCase();
-      const estadoTexto = {
-        pendiente: 'Pendiente',
-        enviado: 'Enviado',
-        sin_envio: 'Disponible'
-      }[estadoValor] || 'Desconocido';
-      const estadoPill = document.createElement('span');
-      estadoPill.className = `estado-pill ${estadoValor}`;
-      estadoPill.textContent = estadoTexto;
-      tdEstado.appendChild(estadoPill);
+      // Ensamblar columnas en el orden del header
       tr.appendChild(tdSelect);
       tr.appendChild(tdNombre);
       tr.appendChild(tdTelefono);
       tr.appendChild(tdRubro);
       tr.appendChild(tdDireccion);
-      tr.appendChild(tdEstado);
       tbody.appendChild(tr);
     });
 

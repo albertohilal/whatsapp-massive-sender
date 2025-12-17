@@ -24,7 +24,7 @@ test.describe('Filtro de Prospectos con Rubro', () => {
     await expect(rubroHeader).toBeVisible();
     
     // Verificar que hay datos en la columna Rubro
-    const primerRubro = await page.locator('table tbody tr:first-child td:nth-child(5)').textContent();
+    const primerRubro = await page.locator('table tbody tr:first-child td:nth-child(4)').textContent();
     expect(primerRubro).not.toBe('');
     expect(primerRubro).not.toBe('Sin rubro');
   });
@@ -80,7 +80,7 @@ test.describe('Filtro de Prospectos con Rubro', () => {
     let prospectosConRubro = 0;
     
     for (let i = 0; i < Math.min(rows, 20); i++) {
-      const rubroText = await page.locator(`table tbody tr:nth-child(${i + 1}) td:nth-child(5)`).textContent();
+      const rubroText = await page.locator(`table tbody tr:nth-child(${i + 1}) td:nth-child(4)`).textContent();
       if (rubroText && rubroText !== 'Sin rubro' && rubroText.trim() !== '') {
         prospectosConRubro++;
       }
@@ -94,27 +94,21 @@ test.describe('Filtro de Prospectos con Rubro', () => {
   test('debe filtrar prospectos por área disponible', async ({ page }) => {
     await page.goto('http://localhost:3010/form_envios.html?sesion=haby&cliente_id=51&cliente_nombre=Haby');
 
-    // Probar áreas conocidas y elegir la primera que tenga resultados
-    const AREAS_VALIDAS = [
-      'Tatuadores',
-      'Restaurantes',
-      'Bares',
-      'Cafeterías',
-      'Hoteles',
-      'Gimnasios',
-      'Peluquerías',
-      'Estéticas',
-      'Otro'
-    ];
+    // Descubrir dinámicamente áreas disponibles para este cliente
     let areaElegida = '';
-    for (const area of AREAS_VALIDAS) {
-      const resp = await page.request.get(`http://localhost:3010/api/envios/filtrar-prospectos?cliente_id=51&estado=sin_envio&area=${encodeURIComponent(area)}`);
-      if (resp.ok()) {
-        const data = await resp.json();
-        const lista = Array.isArray(data?.prospectos) ? data.prospectos : [];
-        if (lista.length > 0) {
-          areaElegida = area;
-          break;
+    const resAreas = await page.request.get('http://localhost:3010/api/envios/areas?cliente_id=51');
+    if (resAreas.ok()) {
+      const dataAreas = await resAreas.json();
+      const areas = Array.isArray(dataAreas?.areas) ? dataAreas.areas : [];
+      for (const area of areas) {
+        const resp = await page.request.get(`http://localhost:3010/api/envios/filtrar-prospectos?cliente_id=51&estado=sin_envio&area=${encodeURIComponent(area)}`);
+        if (resp.ok()) {
+          const data = await resp.json();
+          const lista = Array.isArray(data?.prospectos) ? data.prospectos : [];
+          if (lista.length > 0) {
+            areaElegida = area;
+            break;
+          }
         }
       }
     }

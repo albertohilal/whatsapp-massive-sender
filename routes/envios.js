@@ -157,13 +157,39 @@ router.get('/filtrar-prospectos', async (req, res) => {
       cliente_id, 
       solo_seleccionados,
       estado,
-      area
+      area,
+      tipo_cliente
     } = req.query;
+    // Normalizar posibles arrays en query (duplicados)
+    const first = (v) => Array.isArray(v) ? v[0] : v;
+    const campaniaParam = first(campania);
+    const rubroParam = first(rubro);
+    const direccionParam = first(direccion);
+    const wappValidoParam = first(wapp_valido);
+    const clienteIdParam = first(cliente_id);
+    const soloSeleccionadosParam = first(solo_seleccionados);
+    const estadoParam = first(estado);
+    const areaParam = first(area);
+    const tipoClienteParam = first(tipo_cliente);
+    // Mapear filtro de tipo de cliente
+    const tipoCliente = (tipoClienteParam || '').trim().toLowerCase();
+    const aplicarFiltroCliente = (sqlWhereArray, sqlParamsArray, tableAlias = 's') => {
+      if (tipoCliente === 'clientes') {
+        sqlWhereArray.push(`${tableAlias}.client IN (1,3)`);
+      } else if (tipoCliente === 'prospectos') {
+        sqlWhereArray.push(`${tableAlias}.client IN (2,3)`);
+      } else if (tipoCliente === 'solo_clientes') {
+        sqlWhereArray.push(`${tableAlias}.client = 1`);
+      } else if (tipoCliente === 'solo_prospectos') {
+        sqlWhereArray.push(`${tableAlias}.client = 2`);
+      }
+      // 'ambos' o vacío: no agrega condición
+    };
 
-    const estadoFiltro = (estado || '').trim().toLowerCase();
-    const rubroFiltro = rubro && rubro.trim();
-    const areaFiltro = area && area.trim();
-    const direccionFiltro = direccion && direccion.trim();
+    const estadoFiltro = String(estadoParam || '').trim().toLowerCase();
+    const rubroFiltro = rubroParam ? String(rubroParam).trim() : null;
+    const areaFiltro = areaParam ? String(areaParam).trim() : null;
+    const direccionFiltro = direccionParam ? String(direccionParam).trim() : null;
     const params = [];
     let sql;
     // Helper para generar patrones tolerantes a variantes comunes (ej. tattoo/tatoo/tatu)
@@ -187,10 +213,10 @@ router.get('/filtrar-prospectos', async (req, res) => {
     };
   
     const requiereEstado = estadoFiltro === 'pendiente' || estadoFiltro === 'enviado';
-    const soloSeleccionadosActivos = solo_seleccionados === '1';
+    const soloSeleccionadosActivos = soloSeleccionadosParam === '1';
 
     if (requiereEstado) {
-      if (!campania) {
+      if (!campaniaParam) {
         return res.status(400).send('Debe seleccionar una campaña para filtrar por estado.');
       }
       sql = `
@@ -211,11 +237,17 @@ router.get('/filtrar-prospectos', async (req, res) => {
         WHERE e.campania_id = ?
           AND e.estado = ?
       `;
-      params.push(campania, estadoFiltro);
+      params.push(campaniaParam, estadoFiltro);
+      // Filtro por tipo de cliente
+      const whereExtra = [];
+      aplicarFiltroCliente(whereExtra, params, 's');
+      if (whereExtra.length) {
+        sql += ' AND ' + whereExtra.join(' AND ');
+      }
 
-      if (cliente_id) {
+      if (clienteIdParam) {
         sql += ' AND camp.cliente_id = ?';
-        params.push(cliente_id);
+        params.push(clienteIdParam);
       }
       if (areaFiltro) {
         sql += ' AND r.area = ?';
@@ -228,14 +260,14 @@ router.get('/filtrar-prospectos', async (req, res) => {
         }
       }
       if (direccionFiltro) {
-        sql += ' AND l.direccion LIKE ?';
+        sql += ' AND s.address LIKE ?';
         params.push(`%${direccionFiltro}%`);
       }
-      if (wapp_valido === '1') {
-        sql += ' AND l.wapp_valido = 1';
+      if (wappValidoParam === '1') {
+        sql += " AND s.phone_mobile IS NOT NULL AND s.phone_mobile <> ''";
       }
-      sql += ' ORDER BY l.nombre';
-    } else if (soloSeleccionadosActivos && campania) {
+      sql += ' ORDER BY s.nom';
+    } else if (soloSeleccionadosActivos && campaniaParam) {
       sql = `
         SELECT DISTINCT
           s.rowid AS id,
@@ -253,11 +285,17 @@ router.get('/filtrar-prospectos', async (req, res) => {
         LEFT JOIN ll_campanias_whatsapp camp ON camp.id = e.campania_id
         WHERE e.campania_id = ?
       `;
-      params.push(campania);
+      params.push(campaniaParam);
+      // Filtro por tipo de cliente
+      const whereExtra2 = [];
+      aplicarFiltroCliente(whereExtra2, params, 's');
+      if (whereExtra2.length) {
+        sql += ' AND ' + whereExtra2.join(' AND ');
+      }
 
-      if (cliente_id) {
+      if (clienteIdParam) {
         sql += ' AND camp.cliente_id = ?';
-        params.push(cliente_id);
+        params.push(clienteIdParam);
       }
       if (areaFiltro) {
         sql += ' AND r.area = ?';
@@ -270,13 +308,13 @@ router.get('/filtrar-prospectos', async (req, res) => {
         }
       }
       if (direccionFiltro) {
-        sql += ' AND l.direccion LIKE ?';
+        sql += ' AND s.address LIKE ?';
         params.push(`%${direccionFiltro}%`);
       }
-      if (wapp_valido === '1') {
-        sql += ' AND l.wapp_valido = 1';
+      if (wappValidoParam === '1') {
+        sql += " AND s.phone_mobile IS NOT NULL AND s.phone_mobile <> ''";
       }
-      sql += ' ORDER BY l.nombre';
+      sql += ' ORDER BY s.nom';
     } else if (soloSeleccionadosActivos) {
       return res.status(400).send('Debe seleccionar una campaña para ver los prospectos asignados.');
     } else {
@@ -301,10 +339,16 @@ router.get('/filtrar-prospectos', async (req, res) => {
           AND (estado = 'enviado' OR estado = 'pendiente')
         )
       `;
+      // Filtro por tipo de cliente en sin_envio
+      const whereExtra3 = [];
+      aplicarFiltroCliente(whereExtra3, params, 's');
+      if (whereExtra3.length) {
+        sql += ' AND ' + whereExtra3.join(' AND ');
+      }
 
-      if (cliente_id) {
+      if (clienteIdParam) {
         sql += ' AND lc.cliente_id = ?';
-        params.push(cliente_id);
+        params.push(clienteIdParam);
       }
       if (areaFiltro) {
         sql += ' AND r.area = ?';
