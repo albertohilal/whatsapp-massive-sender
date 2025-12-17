@@ -34,20 +34,26 @@ async function cargarCampanias() {
     tbody.innerHTML = '';
 
     data.forEach(c => {
-      const acciones = c.estado === 'pendiente'
-        ? `
-            <button class="btn btn-sm btn-info" onclick="editarCampania(${c.id})">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="eliminarCampania(${c.id})">Eliminar</button>
-          `
-        : '<span class="text-muted">No editable</span>';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${c.id}</td>
         <td>${c.nombre}</td>
         <td>${c.mensaje}</td>
         <td>${c.estado}</td>
-        <td>${acciones}</td>
+        <td>
+          ${c.estado === 'pendiente'
+            ? '<button class="btn btn-sm btn-info js-editar">Editar</button>\n' +
+              '<button class="btn btn-sm btn-danger js-eliminar">Eliminar</button>'
+            : '<span class="text-muted">No editable</span>'}
+        </td>
       `;
+
+      // Adjuntar listeners sin usar atributos inline (CSP)
+      const editarBtn = tr.querySelector('.js-editar');
+      if (editarBtn) editarBtn.addEventListener('click', () => editarCampania(c.id));
+      const eliminarBtn = tr.querySelector('.js-eliminar');
+      if (eliminarBtn) eliminarBtn.addEventListener('click', () => eliminarCampania(c.id));
+
       tbody.appendChild(tr);
     });
   } catch (err) {
@@ -123,9 +129,17 @@ async function guardarCampania(e) {
 }
 
 function resetForm() {
-  document.getElementById('form-campania').reset();
-  document.getElementById('campania-id').value = '';
+  const form = document.getElementById('form-campania');
+  if (form) form.reset();
+  const idInput = document.getElementById('campania-id');
+  if (idInput) idInput.value = '';
 }
+
+// Asegurar limpieza del id también cuando se use el botón reset
+document.getElementById('form-campania').addEventListener('reset', () => {
+  const idInput = document.getElementById('campania-id');
+  if (idInput) idInput.value = '';
+});
 
 document.getElementById('form-campania').addEventListener('submit', guardarCampania);
 document.addEventListener('DOMContentLoaded', () => {
