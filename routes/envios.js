@@ -166,6 +166,25 @@ router.get('/filtrar-prospectos', async (req, res) => {
     const direccionFiltro = direccion && direccion.trim();
     const params = [];
     let sql;
+    // Helper para generar patrones tolerantes a variantes comunes (ej. tattoo/tatoo/tatu)
+    const getRubroPatterns = (term) => {
+      if (!term) return [];
+      const q = String(term).toLowerCase().trim();
+      const patterns = new Set();
+      // patrón base
+      patterns.add(`%${q}%`);
+      // colapsar letras duplicadas (tattoo -> tato)
+      const collapsed = q.replace(/(.)\1+/g, '$1');
+      patterns.add(`%${collapsed}%`);
+      // reemplazo simple de 'oo' -> 'u' (tattoo -> tatu)
+      patterns.add(`%${q.replace(/oo/g, 'u')}%`);
+      // sinónimos manuales frecuentes para este dominio
+      if (/tatto?o/.test(q) || q.includes('tatu')) {
+        patterns.add('%tatu%');
+        patterns.add('%tatua%');
+      }
+      return Array.from(patterns);
+    };
   
     const requiereEstado = estadoFiltro === 'pendiente' || estadoFiltro === 'enviado';
     const soloSeleccionadosActivos = solo_seleccionados === '1';
@@ -182,6 +201,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
           l.telefono_wapp,
           l.wapp_valido,
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
+          r.area AS area,
           e.estado
         FROM ll_envios_whatsapp e
         INNER JOIN ll_lugares l ON e.lugar_id = l.id
@@ -200,8 +220,11 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND r.area = ?';
         params.push(areaFiltro);
       } else if (rubroFiltro) {
-        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
-        params.push(`%${rubroFiltro}%`);
+        const rubroPatterns = getRubroPatterns(rubroFiltro);
+        if (rubroPatterns.length) {
+          sql += ' AND (' + rubroPatterns.map(() => "LOWER(COALESCE(r.nombre_es, 'Sin rubro')) LIKE ?").join(' OR ') + ')';
+          params.push(...rubroPatterns.map(p => p.toLowerCase()));
+        }
       }
       if (direccionFiltro) {
         sql += ' AND l.direccion LIKE ?';
@@ -220,6 +243,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
           l.telefono_wapp,
           l.wapp_valido,
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
+          r.area AS area,
           e.estado
         FROM ll_envios_whatsapp e
         INNER JOIN ll_lugares l ON e.lugar_id = l.id
@@ -233,9 +257,15 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND camp.cliente_id = ?';
         params.push(cliente_id);
       }
-      if (rubroFiltro) {
-        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
-        params.push(`%${rubroFiltro}%`);
+      if (areaFiltro) {
+        sql += ' AND r.area = ?';
+        params.push(areaFiltro);
+      } else if (rubroFiltro) {
+        const rubroPatterns = getRubroPatterns(rubroFiltro);
+        if (rubroPatterns.length) {
+          sql += ' AND (' + rubroPatterns.map(() => "LOWER(COALESCE(r.nombre_es, 'Sin rubro')) LIKE ?").join(' OR ') + ')';
+          params.push(...rubroPatterns.map(p => p.toLowerCase()));
+        }
       }
       if (direccionFiltro) {
         sql += ' AND l.direccion LIKE ?';
@@ -256,6 +286,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
           s.phone_mobile AS telefono_wapp,
           1 AS wapp_valido,
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
+          r.area AS area,
           'sin_envio' AS estado
         FROM llxbx_societe s
         INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
@@ -277,8 +308,11 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND r.area = ?';
         params.push(areaFiltro);
       } else if (rubroFiltro) {
-        sql += ' AND COALESCE(r.nombre_es, \'Sin rubro\') LIKE ?';
-        params.push(`%${rubroFiltro}%`);
+        const rubroPatterns = getRubroPatterns(rubroFiltro);
+        if (rubroPatterns.length) {
+          sql += ' AND (' + rubroPatterns.map(() => "LOWER(COALESCE(r.nombre_es, 'Sin rubro')) LIKE ?").join(' OR ') + ')';
+          params.push(...rubroPatterns.map(p => p.toLowerCase()));
+        }
       }
       if (direccionFiltro) {
         sql += ' AND s.address LIKE ?';
