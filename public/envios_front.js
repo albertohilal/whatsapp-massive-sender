@@ -133,44 +133,50 @@ async function cargarLugares() {
 
   const campaniaId = document.getElementById('campaniaSelect')?.value || '';
   const filtroRubro = document.getElementById('filtroRubro')?.value?.toLowerCase() || '';
+  const filtroAreaSelect = document.getElementById('filtroArea');
   const filtroDireccion = document.getElementById('filtroDireccion')?.value?.toLowerCase() || '';
   const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
   const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
   const filtroEstado = document.getElementById('filtroEstado')?.value || '';
 
-  // Áreas válidas según ll_rubros.area
-  const AREAS_VALIDAS = [
-    'Tatuadores',
-    'Restaurantes',
-    'Bares',
-    'Cafeterías',
-    'Hoteles',
-    'Gimnasios',
-    'Peluquerías',
-    'Estéticas',
-    'Otro'
-  ];
-  let areaFiltro = '';
+  // Cargar áreas dinámicas si aún no se cargaron
+  try {
+    const areaSelectHasOnlyDefault = filtroAreaSelect && filtroAreaSelect.options && filtroAreaSelect.options.length <= 1;
+    if (areaSelectHasOnlyDefault) {
+      const { cliente_id: cid } = await obtenerUsuarioCliente();
+      const query = cid ? `?cliente_id=${encodeURIComponent(cid)}` : '';
+      const resAreas = await fetch(`/api/envios/areas${query}`);
+      if (resAreas.ok) {
+        const dataAreas = await resAreas.json();
+        const areas = Array.isArray(dataAreas.areas) ? dataAreas.areas : [];
+        areas.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a;
+          opt.textContent = a;
+          filtroAreaSelect.appendChild(opt);
+        });
+      }
+    }
+  } catch {}
+
+  // Resolver filtros de área y rubro: área del select tiene prioridad
+  let areaFiltro = filtroAreaSelect?.value || '';
   let rubroFiltro = filtroRubro;
-  // Si el filtro coincide exactamente con un área, filtrar por área
-  const areaMatch = AREAS_VALIDAS.find(a => a.toLowerCase() === filtroRubro);
-  if (areaMatch) {
-    areaFiltro = areaMatch;
-    rubroFiltro = '';
+  if (!areaFiltro && filtroRubro) {
+    // Si escribieron un área existente en el input, tomarla como área
+    const opciones = Array.from(filtroAreaSelect?.options || []).map(o => (o.value || '').toLowerCase());
+    if (opciones.includes(filtroRubro)) {
+      areaFiltro = (filtroRubro || '').toLowerCase();
+      // Encontrar el case original para enviar
+      const original = Array.from(filtroAreaSelect.options).find(o => (o.value || '').toLowerCase() === areaFiltro);
+      areaFiltro = original ? original.value : areaFiltro;
+      rubroFiltro = '';
+      if (filtroAreaSelect) filtroAreaSelect.value = areaFiltro;
+    }
   }
 
   try {
-    // Obtener datos de usuario logueado
-    let cliente_id = null;
-    let tipo = null;
-    try {
-      const res = await fetch('/api/usuario-logueado');
-      const data = await res.json();
-      if (data && data.usuario) {
-        tipo = data.tipo;
-        cliente_id = data.cliente_id;
-      }
-    } catch {}
+    let { cliente_id, tipo } = await obtenerUsuarioCliente();
 
     // Si es admin, permitir seleccionar cliente (por selector)
     if (clienteIdOverride) {
@@ -316,4 +322,19 @@ async function cargarLugares() {
     statusDiv.textContent = '❌ Error al cargar prospectos: ' + err.message;
     statusDiv.className = 'alert alert-danger mb-3';
   }
+}
+
+async function obtenerUsuarioCliente() {
+  // Obtener datos de usuario logueado (cache simple en variable global si se quiere optimizar)
+  let cliente_id = null;
+  let tipo = null;
+  try {
+    const res = await fetch('/api/usuario-logueado');
+    const data = await res.json();
+    if (data && data.usuario) {
+      tipo = data.tipo;
+      cliente_id = data.cliente_id;
+    }
+  } catch {}
+  return { cliente_id, tipo };
 }

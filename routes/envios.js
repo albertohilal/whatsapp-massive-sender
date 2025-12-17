@@ -348,4 +348,38 @@ router.get('/filtrar-prospectos', async (req, res) => {
   }
 });
 
+// Listado de áreas disponibles (según prospectos sin envío para el cliente)
+router.get('/areas', async (req, res) => {
+  try {
+    const { cliente_id } = req.query;
+    const params = [];
+    let sql = `
+      SELECT DISTINCT r.area AS area
+      FROM llxbx_societe s
+      INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
+      LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+      LEFT JOIN ll_rubros r ON se.rubro_id = r.id
+      WHERE s.rowid NOT IN (
+        SELECT DISTINCT lugar_id 
+        FROM ll_envios_whatsapp 
+        WHERE lugar_id IS NOT NULL 
+        AND (estado = 'enviado' OR estado = 'pendiente')
+      )
+      AND r.area IS NOT NULL AND r.area <> ''
+    `;
+    if (cliente_id) {
+      sql += ' AND lc.cliente_id = ?';
+      params.push(cliente_id);
+    }
+    sql += ' ORDER BY r.area';
+
+    const [rows] = await connection.query(sql, params);
+    const areas = rows.map(r => r.area);
+    res.json({ areas });
+  } catch (error) {
+    console.error('Error al obtener áreas:', error);
+    res.status(500).json({ error: 'Error al obtener áreas' });
+  }
+});
+
 module.exports = router;

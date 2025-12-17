@@ -122,8 +122,14 @@ test.describe('Filtro de Prospectos con Rubro', () => {
     // Si no hay ninguna área con resultados, omitir la prueba para evitar falsos negativos
     test.skip(areaElegida === '', 'No se encontró un área con resultados para este cliente.');
 
-    // Usar el área encontrada en la UI (comparación case-insensitive en el frontend)
-    await page.fill('#filtroRubro', areaElegida.toLowerCase());
+    // Preferir seleccionar por dropdown si está presente
+    const hasAreaSelect = await page.locator('#filtroArea').count();
+    if (hasAreaSelect) {
+      await page.selectOption('#filtroArea', { label: areaElegida });
+    } else {
+      // Fallback: escribir el nombre del área
+      await page.fill('#filtroRubro', areaElegida.toLowerCase());
+    }
     await page.click('button:has-text("Filtrar")');
 
     // Debe renderizar filas
