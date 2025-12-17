@@ -195,17 +195,18 @@ router.get('/filtrar-prospectos', async (req, res) => {
       }
       sql = `
         SELECT 
-          l.id,
-          l.nombre,
-          l.direccion,
-          l.telefono_wapp,
-          l.wapp_valido,
+          s.rowid AS id,
+          s.nom AS nombre,
+          s.address AS direccion,
+          s.phone_mobile AS telefono_wapp,
+          CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile <> '' THEN 1 ELSE 0 END AS wapp_valido,
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
           r.area AS area,
           e.estado
         FROM ll_envios_whatsapp e
-        INNER JOIN ll_lugares l ON e.lugar_id = l.id
-        LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+        INNER JOIN llxbx_societe s ON e.lugar_id = s.rowid
+        LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+        LEFT JOIN ll_rubros r ON se.rubro_id = r.id
         LEFT JOIN ll_campanias_whatsapp camp ON camp.id = e.campania_id
         WHERE e.campania_id = ?
           AND e.estado = ?
@@ -237,17 +238,18 @@ router.get('/filtrar-prospectos', async (req, res) => {
     } else if (soloSeleccionadosActivos && campania) {
       sql = `
         SELECT DISTINCT
-          l.id,
-          l.nombre,
-          l.direccion,
-          l.telefono_wapp,
-          l.wapp_valido,
+          s.rowid AS id,
+          s.nom AS nombre,
+          s.address AS direccion,
+          s.phone_mobile AS telefono_wapp,
+          CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile <> '' THEN 1 ELSE 0 END AS wapp_valido,
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
           r.area AS area,
           e.estado
         FROM ll_envios_whatsapp e
-        INNER JOIN ll_lugares l ON e.lugar_id = l.id
-        LEFT JOIN ll_rubros r ON l.rubro_id = r.id
+        INNER JOIN llxbx_societe s ON e.lugar_id = s.rowid
+        LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
+        LEFT JOIN ll_rubros r ON se.rubro_id = r.id
         LEFT JOIN ll_campanias_whatsapp camp ON camp.id = e.campania_id
         WHERE e.campania_id = ?
       `;
@@ -284,7 +286,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
           s.nom AS nombre,
           s.address AS direccion,
           s.phone_mobile AS telefono_wapp,
-          1 AS wapp_valido,
+          CASE WHEN s.phone_mobile IS NOT NULL AND s.phone_mobile <> '' THEN 1 ELSE 0 END AS wapp_valido,
           COALESCE(r.nombre_es, 'Sin rubro') AS rubro,
           r.area AS area,
           'sin_envio' AS estado
