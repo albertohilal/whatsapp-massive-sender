@@ -42,18 +42,11 @@ async function cargarCampanias() {
         <td>${c.estado}</td>
         <td>
           ${c.estado === 'pendiente'
-            ? '<button class="btn btn-sm btn-info js-editar">Editar</button>\n' +
-              '<button class="btn btn-sm btn-danger js-eliminar">Eliminar</button>'
+            ? `<button type="button" class="btn btn-sm btn-info js-editar" data-id="${c.id}">Editar</button>\n` +
+              `<button type="button" class="btn btn-sm btn-danger js-eliminar" data-id="${c.id}">Eliminar</button>`
             : '<span class="text-muted">No editable</span>'}
         </td>
       `;
-
-      // Adjuntar listeners sin usar atributos inline (CSP)
-      const editarBtn = tr.querySelector('.js-editar');
-      if (editarBtn) editarBtn.addEventListener('click', () => editarCampania(c.id));
-      const eliminarBtn = tr.querySelector('.js-eliminar');
-      if (eliminarBtn) eliminarBtn.addEventListener('click', () => eliminarCampania(c.id));
-
       tbody.appendChild(tr);
     });
   } catch (err) {
@@ -145,6 +138,21 @@ document.getElementById('form-campania').addEventListener('submit', guardarCampa
 document.addEventListener('DOMContentLoaded', () => {
   cargarSesiones();
   cargarCampanias();
+  // Delegación de eventos para acciones de la tabla
+  const tbody = document.getElementById('campanias-table-body');
+  if (tbody) {
+    tbody.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.classList.contains('js-editar')) {
+        const id = target.getAttribute('data-id');
+        if (id) editarCampania(Number(id));
+      } else if (target.classList.contains('js-eliminar')) {
+        const id = target.getAttribute('data-id');
+        if (id) eliminarCampania(Number(id));
+      }
+    });
+  }
 });
 
 window.editarCampania = editarCampania;
