@@ -45,6 +45,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Filtrar lugares
   document.getElementById('filtrarBtn').addEventListener('click', cargarLugares);
 
+  // Seleccionar/Deseleccionar todos
+  document.getElementById('seleccionarTodos').addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('#tablaProspectos input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = e.target.checked);
+  });
+
   // Al cambiar campaña, recargar lugares y tildes
   campaniaSelect.addEventListener('change', cargarLugares);
 
