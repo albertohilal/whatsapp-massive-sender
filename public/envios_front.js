@@ -2,6 +2,9 @@ const urlParams = new URLSearchParams(window.location.search);
 let clienteIdOverride = urlParams.get('cliente_id') || urlParams.get('cliente') || null;
 const modoAdminParam = urlParams.get('modo') === 'admin';
 
+// Variable global para almacenar todos los IDs de lugares filtrados
+let todosLosLugaresFiltrados = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
 
   // Cargar campañas
@@ -66,6 +69,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const checkboxes = document.querySelectorAll('#tablaProspectos input[type="checkbox"]:checked');
     const lugaresSeleccionados = Array.from(checkboxes).map(cb => cb.value);
 
+    console.log('🔍 DEBUG: Checkboxes marcados en DOM:', lugaresSeleccionados.length);
+    console.log('🔍 DEBUG: Total lugares filtrados:', todosLosLugaresFiltrados.length);
+    
+    // Si el checkbox "Seleccionar todos" está marcado, usar TODOS los lugares filtrados
+    const seleccionarTodosCheckbox = document.getElementById('seleccionarTodos');
+    let lugaresAUsar = lugaresSeleccionados;
+    
+    if (seleccionarTodosCheckbox && seleccionarTodosCheckbox.checked) {
+      lugaresAUsar = todosLosLugaresFiltrados.map(l => String(l.id));
+      console.log('✅ Usando TODOS los lugares filtrados:', lugaresAUsar.length);
+    }
+
     // Obtener los lugares ya asignados a la campaña
     let asignados = [];
     if (campaniaId) {
@@ -77,8 +92,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Calcular lugares a agregar y quitar
-    const agregar = lugaresSeleccionados.filter(id => !asignados.includes(id));
-    const quitar = asignados.filter(id => !lugaresSeleccionados.includes(id));
+    const agregar = lugaresAUsar.filter(id => !asignados.includes(id));
+    const quitar = asignados.filter(id => !lugaresAUsar.includes(id));
+
+    console.log('📊 Agregar:', agregar.length, 'Quitar:', quitar.length);
 
     if (!campaniaId || (agregar.length === 0 && quitar.length === 0)) {
       alert('Selecciona una campaña y modifica la selección para guardar cambios.');
@@ -287,6 +304,11 @@ async function cargarLugares() {
       lugaresFiltrados = lugares.filter(lugar => asignadosSet.has(String(lugar.id)));
       console.log('🔍 Lugares después de filtrar por asignados:', lugaresFiltrados.length);
     }
+    
+    // Guardar los lugares filtrados en la variable global
+    todosLosLugaresFiltrados = lugaresFiltrados;
+    console.log('💾 Guardados en variable global:', todosLosLugaresFiltrados.length, 'lugares');
+    
     statusDiv.textContent = `Cargando ${lugaresFiltrados.length} prospectos...`;
 
     // Si no hay seleccionados pero el filtro está activo, mostrar mensaje
