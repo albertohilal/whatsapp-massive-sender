@@ -175,15 +175,13 @@ router.get('/filtrar-prospectos', async (req, res) => {
     const tipoCliente = (tipoClienteParam || '').trim().toLowerCase();
     const aplicarFiltroCliente = (sqlWhereArray, sqlParamsArray, tableAlias = 's') => {
       if (tipoCliente === 'clientes') {
-        sqlWhereArray.push(`${tableAlias}.client IN (1,3)`);
-      } else if (tipoCliente === 'prospectos') {
-        sqlWhereArray.push(`${tableAlias}.client IN (2,3)`);
-      } else if (tipoCliente === 'solo_clientes') {
         sqlWhereArray.push(`${tableAlias}.client = 1`);
-      } else if (tipoCliente === 'solo_prospectos') {
-        sqlWhereArray.push(`${tableAlias}.client = 2`);
+      } else if (tipoCliente === 'prospectos') {
+        sqlWhereArray.push(`(${tableAlias}.client = 0)`);
+      } else if (tipoCliente === 'ambos') {
+        sqlWhereArray.push(`(${tableAlias}.client = 1 OR ${tableAlias}.fournisseur = 1)`);
       }
-      // 'ambos' o vacío: no agrega condición
+      // vacío: no agrega condición
     };
 
     const estadoFiltro = String(estadoParam || '').trim().toLowerCase();
