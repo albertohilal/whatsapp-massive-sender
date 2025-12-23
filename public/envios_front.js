@@ -133,44 +133,72 @@ async function cargarLugares() {
 
   const campaniaId = document.getElementById('campaniaSelect')?.value || '';
   const filtroRubro = document.getElementById('filtroRubro')?.value?.toLowerCase() || '';
+  const filtroAreaSelect = document.getElementById('filtroArea');
   const filtroDireccion = document.getElementById('filtroDireccion')?.value?.toLowerCase() || '';
   const soloValidos = document.getElementById('filtroWappValido')?.checked ? 1 : 0;
   const soloSeleccionados = document.getElementById('filtroSeleccionados')?.checked;
   const filtroEstado = document.getElementById('filtroEstado')?.value || '';
 
-  // Áreas válidas según ll_rubros.area
-  const AREAS_VALIDAS = [
-    'Tatuadores',
-    'Restaurantes',
-    'Bares',
-    'Cafeterías',
-    'Hoteles',
-    'Gimnasios',
-    'Peluquerías',
-    'Estéticas',
-    'Otro'
-  ];
-  let areaFiltro = '';
+    const filtroTipoCliente = document.getElementById('filtroTipoCliente')?.value || '';
+  // Cargar áreas dinámicas si aún no se cargaron
+  try {
+    const areaSelectHasOnlyDefault = filtroAreaSelect && filtroAreaSelect.options && filtroAreaSelect.options.length <= 1;
+    if (areaSelectHasOnlyDefault) {
+      const { cliente_id: cid } = await obtenerUsuarioCliente();
+      let asignadas = [];
+      if (cid) {
+        try {
+          const resAsig = await fetch(`/api/clientes/${encodeURIComponent(cid)}/areas-asignadas`);
+          if (resAsig.ok) {
+            const dataAsig = await resAsig.json();
+            asignadas = Array.isArray(dataAsig.areas) ? dataAsig.areas : [];
+          }
+        } catch {}
+      }
+      // Si hay áreas asignadas, usarlas; si no, descubrir áreas disponibles
+      let areasParaMostrar = asignadas;
+      if (!areasParaMostrar || areasParaMostrar.length === 0) {
+        const query = cid ? `?cliente_id=${encodeURIComponent(cid)}` : '';
+        const resAreas = await fetch(`/api/envios/areas${query}`);
+        if (resAreas.ok) {
+          const dataAreas = await resAreas.json();
+          areasParaMostrar = Array.isArray(dataAreas.areas) ? dataAreas.areas : [];
+        }
+      }
+      areasParaMostrar.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        filtroAreaSelect.appendChild(opt);
+      });
+      // Si solo hay una área, seleccionar y deshabilitar el dropdown para UX
+      if (areasParaMostrar.length === 1) {
+        filtroAreaSelect.value = areasParaMostrar[0];
+        filtroAreaSelect.disabled = true;
+      } else {
+        filtroAreaSelect.disabled = false;
+      }
+    }
+  } catch {}
+
+  // Resolver filtros de área y rubro: área del select tiene prioridad
+  let areaFiltro = filtroAreaSelect?.value || '';
   let rubroFiltro = filtroRubro;
-  // Si el filtro coincide exactamente con un área, filtrar por área
-  const areaMatch = AREAS_VALIDAS.find(a => a.toLowerCase() === filtroRubro);
-  if (areaMatch) {
-    areaFiltro = areaMatch;
-    rubroFiltro = '';
+  if (!areaFiltro && filtroRubro) {
+    // Si escribieron un área existente en el input, tomarla como área
+    const opciones = Array.from(filtroAreaSelect?.options || []).map(o => (o.value || '').toLowerCase());
+    if (opciones.includes(filtroRubro)) {
+      areaFiltro = (filtroRubro || '').toLowerCase();
+      // Encontrar el case original para enviar
+      const original = Array.from(filtroAreaSelect.options).find(o => (o.value || '').toLowerCase() === areaFiltro);
+      areaFiltro = original ? original.value : areaFiltro;
+      rubroFiltro = '';
+      if (filtroAreaSelect) filtroAreaSelect.value = areaFiltro;
+    }
   }
 
   try {
-    // Obtener datos de usuario logueado
-    let cliente_id = null;
-    let tipo = null;
-    try {
-      const res = await fetch('/api/usuario-logueado');
-      const data = await res.json();
-      if (data && data.usuario) {
-        tipo = data.tipo;
-        cliente_id = data.cliente_id;
-      }
-    } catch {}
+    let { cliente_id, tipo } = await obtenerUsuarioCliente();
 
     // Si es admin, permitir seleccionar cliente (por selector)
     if (clienteIdOverride) {
@@ -198,7 +226,7 @@ async function cargarLugares() {
     if (cliente_id) params.append('cliente_id', cliente_id);
     if (soloSeleccionados) params.append('solo_seleccionados', '1');
     if (filtroEstado) params.append('estado', filtroEstado);
-
+    if (filtroTipoCliente) params.append('tipo_cliente', filtroTipoCliente);
     // Debug: mostrar parámetros enviados
     console.log('🔍 Parámetros enviados al backend:', {
       campaniaId,
@@ -286,24 +314,12 @@ async function cargarLugares() {
       // Dirección
       const tdDireccion = document.createElement('td');
       tdDireccion.textContent = lugar.direccion;
-      // Estado
-      const tdEstado = document.createElement('td');
-      const estadoValor = (lugar.estado || 'sin_envio').toLowerCase();
-      const estadoTexto = {
-        pendiente: 'Pendiente',
-        enviado: 'Enviado',
-        sin_envio: 'Disponible'
-      }[estadoValor] || 'Desconocido';
-      const estadoPill = document.createElement('span');
-      estadoPill.className = `estado-pill ${estadoValor}`;
-      estadoPill.textContent = estadoTexto;
-      tdEstado.appendChild(estadoPill);
+      // Ensamblar columnas en el orden del header
       tr.appendChild(tdSelect);
       tr.appendChild(tdNombre);
       tr.appendChild(tdTelefono);
       tr.appendChild(tdRubro);
       tr.appendChild(tdDireccion);
-      tr.appendChild(tdEstado);
       tbody.appendChild(tr);
     });
 
@@ -316,4 +332,19 @@ async function cargarLugares() {
     statusDiv.textContent = '❌ Error al cargar prospectos: ' + err.message;
     statusDiv.className = 'alert alert-danger mb-3';
   }
+}
+
+async function obtenerUsuarioCliente() {
+  // Obtener datos de usuario logueado (cache simple en variable global si se quiere optimizar)
+  let cliente_id = null;
+  let tipo = null;
+  try {
+    const res = await fetch('/api/usuario-logueado');
+    const data = await res.json();
+    if (data && data.usuario) {
+      tipo = data.tipo;
+      cliente_id = data.cliente_id;
+    }
+  } catch {}
+  return { cliente_id, tipo };
 }

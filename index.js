@@ -115,6 +115,8 @@ const usuariosRoutes = require('./routes/usuarios');
 app.use('/api/usuarios', requireAdmin, usuariosRoutes);
 const programacionesRoutes = require('./routes/programaciones');
 app.use('/api/programaciones', requireAuth, programacionesRoutes);
+const clientesRoutes = require('./routes/clientes');
+app.use('/api/clientes', requireAuth, clientesRoutes);
 // Servir archivos estáticos de habysupply antes de cualquier router o middleware
 app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysupply')));
 

@@ -34,19 +34,18 @@ async function cargarCampanias() {
     tbody.innerHTML = '';
 
     data.forEach(c => {
-      const acciones = c.estado === 'pendiente'
-        ? `
-            <button class="btn btn-sm btn-info" onclick="editarCampania(${c.id})">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="eliminarCampania(${c.id})">Eliminar</button>
-          `
-        : '<span class="text-muted">No editable</span>';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${c.id}</td>
         <td>${c.nombre}</td>
         <td>${c.mensaje}</td>
         <td>${c.estado}</td>
-        <td>${acciones}</td>
+        <td>
+          ${c.estado === 'pendiente'
+            ? `<button type="button" class="btn btn-sm btn-info js-editar" data-id="${c.id}">Editar</button>\n` +
+              `<button type="button" class="btn btn-sm btn-danger js-eliminar" data-id="${c.id}">Eliminar</button>`
+            : '<span class="text-muted">No editable</span>'}
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -123,14 +122,37 @@ async function guardarCampania(e) {
 }
 
 function resetForm() {
-  document.getElementById('form-campania').reset();
-  document.getElementById('campania-id').value = '';
+  const form = document.getElementById('form-campania');
+  if (form) form.reset();
+  const idInput = document.getElementById('campania-id');
+  if (idInput) idInput.value = '';
 }
+
+// Asegurar limpieza del id también cuando se use el botón reset
+document.getElementById('form-campania').addEventListener('reset', () => {
+  const idInput = document.getElementById('campania-id');
+  if (idInput) idInput.value = '';
+});
 
 document.getElementById('form-campania').addEventListener('submit', guardarCampania);
 document.addEventListener('DOMContentLoaded', () => {
   cargarSesiones();
   cargarCampanias();
+  // Delegación de eventos para acciones de la tabla
+  const tbody = document.getElementById('campanias-table-body');
+  if (tbody) {
+    tbody.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.classList.contains('js-editar')) {
+        const id = target.getAttribute('data-id');
+        if (id) editarCampania(Number(id));
+      } else if (target.classList.contains('js-eliminar')) {
+        const id = target.getAttribute('data-id');
+        if (id) eliminarCampania(Number(id));
+      }
+    });
+  }
 });
 
 window.editarCampania = editarCampania;

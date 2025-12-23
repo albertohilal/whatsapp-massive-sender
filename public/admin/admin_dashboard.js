@@ -32,10 +32,13 @@ async function controlarProceso(processName, accion) {
 }
 
 async function cargarEstado() {
-  const res = await fetch('/pm2/status');
-  const data = await res.json();
   const contenedor = document.getElementById("estado");
-  contenedor.innerHTML = data.map(proc => {
+  try {
+    const res = await fetch('/pm2/status');
+    if (!res.ok) throw new Error('PM2 no disponible');
+    const data = await res.json();
+    const lista = Array.isArray(data) ? data : [];
+    contenedor.innerHTML = lista.map(proc => {
     const isOnline = proc.pm2_env.status === 'online';
     const statusColor = isOnline ? 'green' : 'red';
     const disableStart = isOnline ? 'disabled' : '';
@@ -54,7 +57,11 @@ async function cargarEstado() {
       </td>
     </tr>
     `;
-  }).join('');
+    }).join('');
+  } catch (err) {
+    // Mostrar estado vacío si PM2 falla o no está instalado
+    contenedor.innerHTML = `<tr><td colspan="6">PM2 no disponible</td></tr>`;
+  }
 }
 
 async function cargarEstadosResponder() {
