@@ -71,12 +71,21 @@ async function cargarProgramaciones() {
         ${p.comentario_admin ? `<div class="muted">Admin: ${p.comentario_admin}</div>` : ''}
         ${p.rechazo_motivo ? `<div class="muted" style="color:#dc2626;">Motivo rechazo: ${p.rechazo_motivo}</div>` : ''}
         <div style="margin-top:10px;display:flex;gap:8px;">
-          <button class="btn-secondary" onclick="editarProgramacion(${p.id})">Editar</button>
-          <button class="btn-danger" onclick="eliminarProgramacion(${p.id})">Eliminar</button>
+          <button class="btn-secondary btn-editar" data-id="${p.id}">Editar</button>
+          <button class="btn-danger btn-eliminar" data-id="${p.id}">Eliminar</button>
         </div>
       </div>
     `)
     .join('');
+  
+  // Agregar event listeners a los botones
+  document.querySelectorAll('.btn-editar').forEach(btn => {
+    btn.addEventListener('click', () => editarProgramacion(Number(btn.dataset.id)));
+  });
+  
+  document.querySelectorAll('.btn-eliminar').forEach(btn => {
+    btn.addEventListener('click', () => eliminarProgramacion(Number(btn.dataset.id)));
+  });
 }
 
 async function enviarFormulario(e) {
@@ -121,7 +130,7 @@ async function enviarFormulario(e) {
   }
 }
 
-window.editarProgramacion = async function(id) {
+async function editarProgramacion(id) {
   try {
     let url = '/api/programaciones';
     if (state.modoAdmin && state.clienteId) {
@@ -161,9 +170,9 @@ window.editarProgramacion = async function(id) {
   } catch (err) {
     alert('Error al cargar datos de programación');
   }
-};
+}
 
-window.eliminarProgramacion = async function(id) {
+async function eliminarProgramacion(id) {
   if (!confirm('¿Estás seguro de eliminar esta programación?')) return;
   
   try {
@@ -175,7 +184,7 @@ window.eliminarProgramacion = async function(id) {
   } catch (err) {
     alert('No se pudo eliminar la programación');
   }
-};
+}
 
 function cancelarEdicion() {
   state.programacionEditando = null;
@@ -189,4 +198,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   await cargarCampanias();
   await cargarProgramaciones();
   document.getElementById('form-programacion').addEventListener('submit', enviarFormulario);
+  document.getElementById('btn-cancelar-edicion').addEventListener('click', cancelarEdicion);
 });
