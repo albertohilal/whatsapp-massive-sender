@@ -81,7 +81,10 @@
         <label for="comentario">Comentarios para el administrador</label>
         <textarea id="comentario" rows="3" placeholder="Ej: Enviar solo por la tarde."></textarea>
       </div>
-      <button type="submit" class="btn-link">Enviar solicitud</button>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn-link">Enviar solicitud</button>
+        <button type="button" id="btn-cancelar-edicion" class="btn-secondary" onclick="cancelarEdicion()" style="display:none;">Cancelar edición</button>
+      </div>
     </form>
   </section>
 

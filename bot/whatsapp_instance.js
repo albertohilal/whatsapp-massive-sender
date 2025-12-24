@@ -15,7 +15,7 @@ function iniciarCliente(sessionName = 'whatsapp-massive-sender') {
   return venom
     .create({
       session: sessionName,
-      headless: false,
+      headless: true, // Cambiar a true para servidor sin entorno gráfico
       useChrome: true,
       executablePath: '/usr/bin/google-chrome-stable',
       disableSpins: true,
@@ -30,7 +30,7 @@ function iniciarCliente(sessionName = 'whatsapp-massive-sender') {
       ],
       puppeteerOptions: {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        headless: false
+        headless: true // Cambiar a true
       },
       // Manejadores de eventos durante la creación
       catchQR: (base64Qr, asciiQR, attempts, urlCode) => {

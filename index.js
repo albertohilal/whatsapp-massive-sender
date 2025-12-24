@@ -155,8 +155,43 @@ app.get('/', (req, res) => {
 const programacionScheduler = require('./services/programacionScheduler');
 programacionScheduler.start();
 
+// Inicializar sesiones de WhatsApp automáticamente al arrancar
+const fs = require('fs');
+
+async function inicializarSesionesWhatsApp() {
+  try {
+    // Verificar qué sesiones existen en la carpeta tokens/
+    const tokensPath = path.join(__dirname, 'tokens');
+    if (fs.existsSync(tokensPath)) {
+      const sesiones = fs.readdirSync(tokensPath).filter(file => {
+        return fs.statSync(path.join(tokensPath, file)).isDirectory();
+      });
+      
+      winston.info(`📱 Sesiones de WhatsApp encontradas: ${sesiones.join(', ')}`);
+      
+      // Iniciar cada sesión encontrada
+      for (const sessionName of sesiones) {
+        winston.info(`🚀 Iniciando sesión de WhatsApp: ${sessionName}`);
+        try {
+          await iniciarCliente(sessionName);
+          winston.info(`✅ Sesión ${sessionName} iniciada correctamente`);
+        } catch (err) {
+          winston.error(`❌ Error al iniciar sesión ${sessionName}:`, err.message);
+        }
+      }
+    } else {
+      winston.warn('⚠️ No se encontró la carpeta tokens/, no hay sesiones para inicializar');
+    }
+  } catch (err) {
+    winston.error('❌ Error al inicializar sesiones de WhatsApp:', err);
+  }
+}
+
 // Puerto desde .env o por defecto en 3010
 const PORT = process.env.PORT || 3010;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   winston.info(`Servidor corriendo en http://localhost:${PORT}`);
+  
+  // Inicializar sesiones de WhatsApp después de que el servidor esté listo
+  await inicializarSesionesWhatsApp();
 });

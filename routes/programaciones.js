@@ -128,4 +128,93 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT: Actualizar programación existente
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { campania_id, dias_semana, hora_inicio, hora_fin, cupo_diario, fecha_inicio, fecha_fin, comentario } = req.body;
+    const tipo = req.session?.tipo;
+    const sessionCliente = tipo === 'cliente' ? req.session?.cliente_id : null;
+
+    if (!campania_id || !hora_inicio || !hora_fin || !fecha_inicio) {
+      return res.status(400).json({ error: 'Faltan datos obligatorios' });
+    }
+
+    const diasNormalizados = normalizeDays(dias_semana);
+    if (!diasNormalizados.length) {
+      return res.status(400).json({ error: 'Selecciona al menos un día de la semana' });
+    }
+
+    // Verificar que la programación existe y pertenece al cliente
+    const [programaciones] = await connection.query(
+      'SELECT cliente_id FROM ll_programaciones WHERE id = ?',
+      [id]
+    );
+    
+    if (!programaciones.length) {
+      return res.status(404).json({ error: 'Programación no encontrada' });
+    }
+
+    if (tipo === 'cliente' && programaciones[0].cliente_id !== sessionCliente) {
+      return res.status(403).json({ error: 'No tienes permiso para editar esta programación' });
+    }
+
+    // Actualizar programación
+    await connection.query(
+      `UPDATE ll_programaciones 
+       SET campania_id = ?, dias_semana = ?, hora_inicio = ?, hora_fin = ?, 
+           cupo_diario = ?, fecha_inicio = ?, fecha_fin = ?, comentario_cliente = ?,
+           actualizado_en = NOW()
+       WHERE id = ?`,
+      [
+        campania_id,
+        diasNormalizados.join(','),
+        hora_inicio,
+        hora_fin,
+        cupo_diario || 50,
+        fecha_inicio,
+        fecha_fin || null,
+        comentario || null,
+        id
+      ]
+    );
+
+    res.json({ success: true, message: 'Programación actualizada correctamente' });
+  } catch (err) {
+    console.error('Error actualizando programación:', err);
+    res.status(500).json({ error: 'Error al actualizar programación' });
+  }
+});
+
+// DELETE: Eliminar programación
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tipo = req.session?.tipo;
+    const sessionCliente = tipo === 'cliente' ? req.session?.cliente_id : null;
+
+    // Verificar que la programación existe y pertenece al cliente
+    const [programaciones] = await connection.query(
+      'SELECT cliente_id FROM ll_programaciones WHERE id = ?',
+      [id]
+    );
+    
+    if (!programaciones.length) {
+      return res.status(404).json({ error: 'Programación no encontrada' });
+    }
+
+    if (tipo === 'cliente' && programaciones[0].cliente_id !== sessionCliente) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar esta programación' });
+    }
+
+    // Eliminar programación
+    await connection.query('DELETE FROM ll_programaciones WHERE id = ?', [id]);
+
+    res.json({ success: true, message: 'Programación eliminada correctamente' });
+  } catch (err) {
+    console.error('Error eliminando programación:', err);
+    res.status(500).json({ error: 'Error al eliminar programación' });
+  }
+});
+
 module.exports = router;
