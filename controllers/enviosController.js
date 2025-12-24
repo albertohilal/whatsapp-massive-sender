@@ -42,7 +42,7 @@ const obtenerEnvios = async (req, res) => {
 
 // Obtener envíos por campaña específica
 const obtenerEnviosPorCampania = async (req, res) => {
-  const { campania_id } = req.params;
+  const { id } = req.params; // Cambiar de campania_id a id para que coincida con la ruta
   
   try {
     const conn = await pool.getConnection();
@@ -69,10 +69,9 @@ const obtenerEnviosPorCampania = async (req, res) => {
        LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
        LEFT JOIN ll_rubros r ON se.rubro_id = r.id
        WHERE e.campania_id = ?
-         AND e.estado IN ('enviado', 'pendiente') 
          AND s.phone_mobile IS NOT NULL AND s.phone_mobile != ''
        ORDER BY e.fecha_envio DESC, e.id DESC`,
-      [campania_id]
+      [id]
     );
     
     conn.release();

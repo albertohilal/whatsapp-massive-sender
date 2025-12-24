@@ -316,6 +316,38 @@ router.get('/filtrar-prospectos', async (req, res) => {
     } else if (soloSeleccionadosActivos) {
       return res.status(400).send('Debe seleccionar una campaña para ver los prospectos asignados.');
     } else {
+      // Construcción de la subconsulta para excluir enviados/pendientes
+      let subqueryExclude = '';
+      
+      // Solo aplicar filtro de exclusión si el estado es "sin_envio"
+      // Si está vacío o es "todos", no excluir ninguno
+      if (estadoFiltro === 'sin_envio') {
+        if (campaniaParam) {
+          // Si hay campaña seleccionada, excluir solo los enviados en ESA campaña
+          subqueryExclude = `
+          WHERE s.rowid NOT IN (
+            SELECT DISTINCT lugar_id 
+            FROM ll_envios_whatsapp 
+            WHERE campania_id = ?
+              AND lugar_id IS NOT NULL 
+              AND (estado = 'enviado' OR estado = 'pendiente')
+          )`;
+          params.push(campaniaParam);
+        } else {
+          // Sin campaña, excluir los que tienen envíos en CUALQUIER campaña
+          subqueryExclude = `
+          WHERE s.rowid NOT IN (
+            SELECT DISTINCT lugar_id 
+            FROM ll_envios_whatsapp 
+            WHERE lugar_id IS NOT NULL 
+              AND (estado = 'enviado' OR estado = 'pendiente')
+          )`;
+        }
+      } else {
+        // Estado vacío o "todos": no excluir ninguno, solo filtrar por WHERE básico
+        subqueryExclude = 'WHERE 1=1';
+      }
+      
       sql = `
         SELECT 
           s.rowid AS id,
@@ -330,12 +362,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
         INNER JOIN ll_lugares_clientes lc ON lc.societe_id = s.rowid
         LEFT JOIN ll_societe_extended se ON se.societe_id = s.rowid
         LEFT JOIN ll_rubros r ON se.rubro_id = r.id
-        WHERE s.rowid NOT IN (
-          SELECT DISTINCT lugar_id 
-          FROM ll_envios_whatsapp 
-          WHERE lugar_id IS NOT NULL 
-          AND (estado = 'enviado' OR estado = 'pendiente')
-        )
+        ${subqueryExclude}
       `;
       // Filtro por tipo de cliente en sin_envio
       const whereExtra3 = [];
@@ -362,7 +389,7 @@ router.get('/filtrar-prospectos', async (req, res) => {
         sql += ' AND s.address LIKE ?';
         params.push(`%${direccionFiltro}%`);
       }
-      if (wapp_valido === '1') {
+      if (wappValidoParam === '1') {
         sql += ' AND s.phone_mobile IS NOT NULL AND s.phone_mobile != \'\'';
       }
       sql += ' ORDER BY s.nom';

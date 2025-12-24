@@ -142,7 +142,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (ok) {
       alert('Cambios guardados correctamente.');
+      // Forzar recarga completa para actualizar los tildes
       await cargarLugares();
+      // Recargar una segunda vez para asegurar que se actualicen los estados
+      setTimeout(() => cargarLugares(), 500);
     } else {
       alert(msg || 'Error al guardar cambios.');
     }
@@ -151,6 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function cargarLugares() {
   const statusDiv = document.getElementById('statusMessage');
+  statusDiv.style.display = 'none';
   statusDiv.style.display = 'block';
   statusDiv.textContent = 'Cargando prospectos...';
 
@@ -277,19 +281,28 @@ async function cargarLugares() {
       ? lugaresResp
       : (Array.isArray(lugaresResp.prospectos) ? lugaresResp.prospectos : []);
 
-    // 2. Obtener prospectos ya asignados a la campaña
-    let asignados = [];
+    // 2. Obtener prospectos ya asignados a la campaña con su estado
+    let enviosPorLugar = new Map();
     if (campaniaId) {
+      console.log('🔍 Consultando envíos para campaña:', campaniaId);
       const resAsignados = await fetch(`/api/envios/envios/campania/${campaniaId}`);
+      console.log('📡 Status de respuesta:', resAsignados.status, resAsignados.ok);
       if (resAsignados.ok) {
         const envios = await resAsignados.json();
-        // Solo agregar si existe lugar_id
-        asignados = envios
-          .filter(e => e.lugar_id !== undefined && e.lugar_id !== null)
-          .map(e => String(e.lugar_id));
+        console.log('📦 Envíos recibidos:', envios.length, 'registros');
+        console.log('🔍 Primeros 3 envíos:', envios.slice(0, 3));
+        // Mapear lugar_id -> estado
+        envios.forEach(e => {
+          if (e.lugar_id !== undefined && e.lugar_id !== null) {
+            enviosPorLugar.set(String(e.lugar_id), e.estado);
+          }
+        });
+        console.log('✅ Map de envíos construido con', enviosPorLugar.size, 'entradas');
+      } else {
+        const errorText = await resAsignados.text();
+        console.error('❌ Error al obtener envíos:', errorText);
       }
     }
-    const asignadosSet = new Set(asignados);
 
     const tbody = document.getElementById('tablaProspectos');
     tbody.innerHTML = '';
@@ -297,11 +310,11 @@ async function cargarLugares() {
     // Debug: verificar duplicados
     console.log('📊 Lugares recibidos del backend:', lugares.length);
     console.log('🎯 Lugares:', lugares);
-    console.log('✅ Asignados:', asignados);
+    console.log('✅ Envíos por lugar:', enviosPorLugar);
     
     let lugaresFiltrados = lugares;
     if (soloSeleccionados) {
-      lugaresFiltrados = lugares.filter(lugar => asignadosSet.has(String(lugar.id)));
+      lugaresFiltrados = lugares.filter(lugar => enviosPorLugar.has(String(lugar.id)));
       console.log('🔍 Lugares después de filtrar por asignados:', lugaresFiltrados.length);
     }
     
@@ -325,10 +338,20 @@ async function cargarLugares() {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = lugar.id;
-      // Marcar con tilde si ya está asignado
-      if (asignadosSet.has(String(lugar.id))) {
+      
+      const estadoEnvio = enviosPorLugar.get(String(lugar.id));
+      
+      // Si está asignado a la campaña, marcar con tilde
+      if (estadoEnvio) {
         checkbox.checked = true;
+        
+        // Si ya fue enviado, deshabilitar el checkbox
+        if (estadoEnvio === 'enviado') {
+          checkbox.disabled = true;
+          tr.style.backgroundColor = '#f0f9ff'; // Color azul claro para indicar enviado
+        }
       }
+      
       tdSelect.appendChild(checkbox);
       // Nombre
       const tdNombre = document.createElement('td');
@@ -353,9 +376,6 @@ async function cargarLugares() {
 
     statusDiv.textContent = `✅ ${lugaresFiltrados.length} prospectos cargados exitosamente`;
     statusDiv.className = 'alert alert-success mb-3';
-    setTimeout(() => {
-      statusDiv.style.display = 'none';
-    }, 3000);
   } catch (err) {
     statusDiv.textContent = '❌ Error al cargar prospectos: ' + err.message;
     statusDiv.className = 'alert alert-danger mb-3';
