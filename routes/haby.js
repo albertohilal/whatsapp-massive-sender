@@ -209,4 +209,39 @@ router.post('/api/wapp-session/close', async (req, res) => {
   });
 });
 
+// Auto-inicializar la sesión al cargar el módulo si existen tokens
+(async function autoInitHabySession() {
+  const tokensPath = path.join(__dirname, '..', 'tokens', 'haby', 'Default');
+  
+  if (fs.existsSync(tokensPath)) {
+    console.log('🔄 Detectados tokens de sesión Haby, inicializando automáticamente...');
+    
+    if (!habyClientWrapper) {
+      habyClientWrapper = createHabyWappClient();
+    }
+    
+    if (!habyClientWrapper.initialized) {
+      try {
+        habyClientWrapper.client.initialize();
+        habyClientWrapper.initialized = true;
+        habyClientWrapper.status = 'reconectando';
+        console.log('✅ Sesión Haby inicializada automáticamente');
+      } catch (err) {
+        console.error('❌ Error al auto-inicializar sesión Haby:', err);
+      }
+    }
+  } else {
+    console.log('ℹ️ No se encontraron tokens de sesión Haby, esperando inicialización manual');
+  }
+})();
+
+// Exportar función para obtener el cliente de Haby desde otros módulos
+function getHabyClient() {
+  if (habyClientWrapper && habyClientWrapper.status === 'conectado') {
+    return habyClientWrapper.client;
+  }
+  throw new Error('Cliente de WhatsApp Haby no está conectado');
+}
+
 module.exports = router;
+module.exports.getHabyClient = getHabyClient;

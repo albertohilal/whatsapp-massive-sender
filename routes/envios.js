@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { sendMessage } = require('../bot/whatsapp_instance');
+const { getHabyClient } = require('./haby');
+
 // Quitar prospectos seleccionados de una campaña
 router.delete('/quitar-de-campania', async (req, res) => {
   const { campaniaId, lugares } = req.body;
@@ -122,6 +125,108 @@ router.post('/agregar-a-campania', async (req, res) => {
     } else {
       res.status(500).json({ success: false, error: 'Error al agregar prospectos' });
     }
+  }
+});
+
+// Enviar una campaña completa
+router.post('/enviar/:id', async (req, res) => {
+  const campaniaId = req.params.id;
+  
+  try {
+    // Obtener información de la campaña para determinar el cliente
+    const [campania] = await connection.query(
+      'SELECT cliente_id FROM ll_campanias_whatsapp WHERE id = ?',
+      [campaniaId]
+    );
+    
+    if (!campania || campania.length === 0) {
+      return res.status(404).json({ ok: false, error: 'Campaña no encontrada' });
+    }
+    
+    // Obtener el nombre del usuario para la sesión de WhatsApp
+    const [usuario] = await connection.query(
+      'SELECT usuario FROM ll_usuarios WHERE cliente_id = ? AND tipo = ? LIMIT 1',
+      [campania[0].cliente_id, 'cliente']
+    );
+    
+    const sessionName = usuario && usuario.length > 0 
+      ? usuario[0].usuario.toLowerCase() 
+      : 'haby'; // Fallback a 'haby' si no se encuentra
+    
+    console.log(`🔹 Enviando campaña ${campaniaId} usando sesión: ${sessionName}`);
+    
+    // Obtener todos los mensajes pendientes de esta campaña
+    const [mensajes] = await connection.query(
+      `SELECT id, telefono_wapp, mensaje_final 
+       FROM ll_envios_whatsapp 
+       WHERE campania_id = ? AND estado = 'pendiente'
+       ORDER BY id ASC`,
+      [campaniaId]
+    );
+    
+    if (mensajes.length === 0) {
+      return res.json({ 
+        ok: true, 
+        message: 'No hay mensajes pendientes para enviar',
+        enviados: 0,
+        errores: 0
+      });
+    }
+    
+    let enviados = 0;
+    let errores = 0;
+    
+    // Función para pausar entre envíos
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    
+    // Enviar cada mensaje
+    for (const msg of mensajes) {
+      try {
+        // Si es la sesión 'haby', usar whatsapp-web.js en lugar de venom-bot
+        if (sessionName === 'haby') {
+          try {
+            const habyClient = getHabyClient();
+            const chatId = msg.telefono_wapp.includes('@c.us') 
+              ? msg.telefono_wapp 
+              : `${msg.telefono_wapp}@c.us`;
+            await habyClient.sendMessage(chatId, msg.mensaje_final);
+          } catch (error) {
+            throw new Error(`Cliente Haby no disponible: ${error.message}`);
+          }
+        } else {
+          // Para otras sesiones, usar venom-bot
+          await sendMessage(sessionName, msg.telefono_wapp, msg.mensaje_final);
+        }
+        
+        // Actualizar estado en la base de datos
+        await connection.query(
+          'UPDATE ll_envios_whatsapp SET estado = "enviado", fecha_envio = NOW() WHERE id = ?',
+          [msg.id]
+        );
+        
+        enviados++;
+        console.log(`✅ Mensaje ${msg.id} enviado a ${msg.telefono_wapp}`);
+        
+        // Esperar entre 5 y 15 segundos antes del siguiente envío
+        const delay = Math.floor(Math.random() * (15000 - 5000 + 1)) + 5000;
+        await sleep(delay);
+        
+      } catch (error) {
+        errores++;
+        console.error(`❌ Error enviando mensaje ${msg.id}:`, error.message);
+      }
+    }
+    
+    res.json({
+      ok: true,
+      message: `Proceso completado. Enviados: ${enviados}, Errores: ${errores}`,
+      enviados,
+      errores
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en envío de campaña:', error);
+    res.status(500).json({ ok: false, error: 'Error al procesar el envío de la campaña' });
   }
 });
 

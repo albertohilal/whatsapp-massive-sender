@@ -3,6 +3,10 @@
 
 let pendientes = [];
 
+// Obtener parámetros de la URL
+const urlParams = new URLSearchParams(window.location.search);
+const sessionParam = urlParams.get('session'); // Ej: 'haby'
+
 async function cargarCampanias() {
   try {
     const res = await fetch('/api/campanias');
@@ -84,10 +88,18 @@ async function enviarSeleccionados() {
   if (!confirmar) return;
 
   try {
+    const body = { ids: seleccionados };
+    
+    // Si hay parámetro de sesión en la URL, incluirlo en el request
+    if (sessionParam) {
+      body.session = sessionParam;
+      console.log(`🔹 Enviando con sesión: ${sessionParam}`);
+    }
+
     const res = await fetch('/api/enviar-manual', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: seleccionados })
+      body: JSON.stringify(body)
     });
 
     const contentType = res.headers.get('content-type');

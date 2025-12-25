@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../leadmaster-central-hub"
+		},
+		{
+			"path": "../whatsapp-bot-responder"
 		}
 	],
 	"settings": {}

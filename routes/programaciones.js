@@ -217,4 +217,65 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST: Aprobar programación (solo admin)
+router.post('/:id/aprobar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comentario_admin } = req.body;
+    const tipo = req.session?.tipo;
+    
+    if (tipo !== 'admin') {
+      return res.status(403).json({ error: 'Solo administradores pueden aprobar programaciones' });
+    }
+
+    const aprobadoPor = req.session?.usuario || 'admin';
+
+    await connection.query(
+      `UPDATE ll_programaciones 
+       SET estado = 'aprobado', 
+           comentario_admin = ?, 
+           aprobado_por = ?, 
+           aprobado_en = NOW() 
+       WHERE id = ?`,
+      [comentario_admin || null, aprobadoPor, id]
+    );
+
+    res.json({ success: true, message: 'Programación aprobada correctamente' });
+  } catch (err) {
+    console.error('Error aprobando programación:', err);
+    res.status(500).json({ error: 'Error al aprobar programación' });
+  }
+});
+
+// POST: Rechazar programación (solo admin)
+router.post('/:id/rechazar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rechazo_motivo } = req.body;
+    const tipo = req.session?.tipo;
+    
+    if (tipo !== 'admin') {
+      return res.status(403).json({ error: 'Solo administradores pueden rechazar programaciones' });
+    }
+
+    if (!rechazo_motivo || rechazo_motivo.trim() === '') {
+      return res.status(400).json({ error: 'Debes indicar un motivo de rechazo' });
+    }
+
+    await connection.query(
+      `UPDATE ll_programaciones 
+       SET estado = 'rechazado', 
+           rechazo_motivo = ?,
+           aprobado_en = NOW() 
+       WHERE id = ?`,
+      [rechazo_motivo, id]
+    );
+
+    res.json({ success: true, message: 'Programación rechazada' });
+  } catch (err) {
+    console.error('Error rechazando programación:', err);
+    res.status(500).json({ error: 'Error al rechazar programación' });
+  }
+});
+
 module.exports = router;

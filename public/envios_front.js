@@ -1,6 +1,7 @@
 const urlParams = new URLSearchParams(window.location.search);
 let clienteIdOverride = urlParams.get('cliente_id') || urlParams.get('cliente') || null;
 const modoAdminParam = urlParams.get('modo') === 'admin';
+const campaniaParam = urlParams.get('campania'); // Leer ID de campaña de la URL
 
 // Variable global para almacenar todos los IDs de lugares filtrados
 let todosLosLugaresFiltrados = [];
@@ -24,11 +25,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       option.textContent = c.nombre;
       campaniaSelect.appendChild(option);
     });
+    
+    // Si hay parámetro campania en la URL, seleccionarla y cargar
+    if (campaniaParam) {
+      campaniaSelect.value = campaniaParam;
+      // Cambiar a "todos" para ver todos los prospectos asignados
+      if (filtroEstadoSelect) {
+        filtroEstadoSelect.value = '';
+      }
+      // Marcar "solo seleccionados" para ver los de esta campaña
+      if (soloSeleccionadosInput) {
+        soloSeleccionadosInput.checked = true;
+      }
+    }
   } catch (err) {
     console.error('Error cargando campañas:', err);
   }
 
-  if (filtroEstadoSelect && !filtroEstadoSelect.value) {
+  if (filtroEstadoSelect && !filtroEstadoSelect.value && !campaniaParam) {
     filtroEstadoSelect.value = 'sin_envio';
   }
 
@@ -42,8 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Cargar lugares al inicio
-  await cargarLugares();
+  // Cargar lugares al inicio (automáticamente si hay campaña en URL)
+  if (campaniaParam) {
+    await cargarLugares();
+  }
 
   // Filtrar lugares
   document.getElementById('filtrarBtn').addEventListener('click', cargarLugares);
