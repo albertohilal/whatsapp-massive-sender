@@ -117,6 +117,8 @@ const programacionesRoutes = require('./routes/programaciones');
 app.use('/api/programaciones', requireAuth, programacionesRoutes);
 const clientesRoutes = require('./routes/clientes');
 app.use('/api/clientes', requireAuth, clientesRoutes);
+const whatsappListenerRoutes = require('./routes/whatsapp-listener');
+app.use(whatsappListenerRoutes);
 // Servir archivos estáticos de habysupply antes de cualquier router o middleware
 app.use('/habysupply-static', express.static(path.join(__dirname, 'public/habysupply')));
 
