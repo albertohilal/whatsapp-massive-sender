@@ -158,3 +158,58 @@ document.getElementById('wapp-session-close').addEventListener('click', async fu
   this.disabled = false;
   cargarEstadoSesion();
 });
+
+// ========== BOT TOGGLE ==========
+const botToggle = document.getElementById('bot-toggle');
+const botStatusText = document.getElementById('bot-status-text');
+const CLIENTE_ID = 51; // Haby cliente_id
+
+async function cargarEstadoBot() {
+  try {
+    const res = await fetch(`/api/bot-config/status/${CLIENTE_ID}`);
+    const data = await res.json();
+    
+    const activo = data.bot_activo === 1;
+    botToggle.checked = activo;
+    botStatusText.textContent = activo ? '🤖 Activo (Responde automáticamente)' : '🔇 Solo Escucha';
+    botStatusText.style.color = activo ? '#10b981' : '#6b7280';
+  } catch (err) {
+    console.error('Error cargando estado del bot:', err);
+    botStatusText.textContent = 'Error al cargar';
+    botStatusText.style.color = '#dc3545';
+  }
+}
+
+botToggle.addEventListener('change', async (e) => {
+  const nuevoEstado = e.target.checked ? 1 : 0;
+  botToggle.disabled = true;
+  botStatusText.textContent = 'Actualizando...';
+  
+  try {
+    const res = await fetch(`/api/bot-config/toggle/${CLIENTE_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bot_activo: nuevoEstado })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      botStatusText.textContent = nuevoEstado ? '🤖 Activo (Responde automáticamente)' : '🔇 Solo Escucha';
+      botStatusText.style.color = nuevoEstado ? '#10b981' : '#6b7280';
+    } else {
+      throw new Error(data.error || 'Error desconocido');
+    }
+  } catch (err) {
+    console.error('Error actualizando bot:', err);
+    alert('Error al actualizar configuración del bot');
+    // Revertir el toggle
+    botToggle.checked = !e.target.checked;
+    await cargarEstadoBot();
+  } finally {
+    botToggle.disabled = false;
+  }
+});
+
+// Cargar estado inicial del bot
+cargarEstadoBot();

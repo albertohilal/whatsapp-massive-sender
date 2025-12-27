@@ -41,6 +41,19 @@
     <div id="qr-container"></div>
   </section>
 
+  <section class="card">
+    <h2>Respuestas Automáticas (Bot IA)</h2>
+    <p class="muted">Activa o desactiva las respuestas automáticas del bot. Cuando está desactivado, solo registra mensajes sin responder.</p>
+    <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+      <label style="font-weight: 600;">Estado del Bot:</label>
+      <label class="toggle-switch">
+        <input type="checkbox" id="bot-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+      <span id="bot-status-text" style="font-weight: 600; color: #6b7280;">Cargando...</span>
+    </div>
+  </section>
+
   <script src="/haby/dashboard_haby.js" defer></script>
 
   <script src="/dashboard_link.js"></script>
