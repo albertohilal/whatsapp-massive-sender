@@ -191,7 +191,8 @@ router.post('/enviar/:id', async (req, res) => {
               : `${msg.telefono_wapp}@c.us`;
             await habyClient.sendMessage(chatId, msg.mensaje_final);
           } catch (error) {
-            throw new Error(`Cliente Haby no disponible: ${error.message}`);
+            console.error(`❌ Cliente Haby no disponible: ${error.message}`);
+            throw new Error(`WhatsApp no está conectado. Por favor, escanea el código QR en /haby/api/whatsapp/qr`);
           }
         } else {
           // Para otras sesiones, usar venom-bot

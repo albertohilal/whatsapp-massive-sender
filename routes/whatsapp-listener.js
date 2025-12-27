@@ -111,6 +111,12 @@ function setupMessageListener() {
     const client = getHabyClient();
     
     client.on('message', async (msg) => {
+      // Filtrar status broadcasts y newsletters
+      if (msg.from === 'status@broadcast' || msg.from.includes('@newsletter')) {
+        console.log(`📨 Mensaje recibido de ${msg.from} (ignorado: status/newsletter)`);
+        return;
+      }
+      
       console.log(`📨 Mensaje recibido de ${msg.from}: ${msg.body}`);
       
       // Notificar a todos los listeners registrados
@@ -119,7 +125,8 @@ function setupMessageListener() {
         body: msg.body,
         timestamp: msg.timestamp,
         type: msg.type,
-        id: msg.id._serialized
+        id: msg.id._serialized,
+        cliente_id: 51 // Haby
       });
     });
     

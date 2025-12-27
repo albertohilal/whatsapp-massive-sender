@@ -157,6 +157,37 @@ app.get('/', (req, res) => {
 const programacionScheduler = require('./services/programacionScheduler');
 programacionScheduler.start();
 
+// Global error handler middleware - must be after all routes
+app.use((err, req, res, next) => {
+  winston.error('❌ Error no manejado:', err);
+  
+  // Asegurar que siempre respondemos con JSON para rutas API
+  if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+    return res.status(err.status || 500).json({
+      ok: false,
+      error: err.message || 'Error interno del servidor',
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
+  
+  // Para otras rutas, devolver HTML de error
+  res.status(err.status || 500).send(`
+    <h1>Error ${err.status || 500}</h1>
+    <p>${err.message || 'Error interno del servidor'}</p>
+  `);
+});
+
+// 404 handler - must be after all routes
+app.use((req, res) => {
+  if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+    return res.status(404).json({
+      ok: false,
+      error: 'Ruta no encontrada'
+    });
+  }
+  res.status(404).send('<h1>404 - Página no encontrada</h1>');
+});
+
 // Inicializar sesiones de WhatsApp automáticamente al arrancar
 const fs = require('fs');
 
